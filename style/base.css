@@ -3,3 +3,12 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+@import url('base.css');
+
+.papyri-browser {
+  color: green;
+  display: block;
+  overflow: auto;
+  border: solid thin green;
+}

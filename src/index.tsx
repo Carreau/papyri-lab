@@ -4,28 +4,9 @@ import {
 } from '@jupyterlab/application';
 import { PapyriWidget } from './widget';
 
-
-
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { requestAPI } from './handler';
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
-
-//import { Widget } from '@lumino/widgets';
-
-const _request_api_example = async () => {
-
-  try {
-    const data = requestAPI<any>('get_example');
-    console.log('Async Func:', data);
-  } catch (reason) {
-    console.error(
-      `The papyri_lab server extension appears to be missing.\n${reason}`
-    );
-  }
-
-}
-
 
 /**
  * Initialization data for the papyri-lab extension.
@@ -34,10 +15,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
   optional: [ICommandPalette, ISettingRegistry],
-  activate: (app: JupyterFrontEnd, palette: ICommandPalette, settingRegistry: ISettingRegistry) => {
+  activate: (
+    app: JupyterFrontEnd,
+    palette: ICommandPalette,
+    settingRegistry: ISettingRegistry
+  ) => {
     console.log('JupyterLab extension papyri-lab is activated!');
-    console.log('ICommandPalette PPLab:', palette);
-    console.log('SettingRegistry PPLab:', settingRegistry);
 
     if (settingRegistry) {
       settingRegistry
@@ -57,7 +40,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     widget.title.label = 'Papyri browser';
     widget.title.closable = true;
 
-    const command: string = 'papyri:open';
+    const command = 'papyri:open';
     app.commands.addCommand(command, {
       label: 'Open papyri browser',
       execute: () => {
@@ -72,25 +55,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Add the command to the palette.
 
     palette.addItem({ command, category: 'Papyri' });
-    _request_api_example()
-    requestAPI<any>('get_example')
-      .then(data => {
-        console.log('Got reply:',data);
-        content.setDX(data.data);
-        console.log('content set');
-
-  //      const arb = data.data.arbitrary.map((x: any) => new Section(x.children, x.title));
-  //      const domContainer = document.getElementById("papyri-root");
-  //ReactDOM.render(
-  //  arb.map((x: any) => <DSection>{x}</DSection>),
-  //  domContainer
-  //);
-      })
-      .catch(reason => {
-        console.error(
-          `The papyri_lab server extension appears to be missing.\n${reason}`
-        );
-      });
   }
 };
 

@@ -9,13 +9,18 @@ class RouteHandler(APIHandler):
     # patch, put, delete, options) to ensure only authorized user can request the
     # Jupyter server
     @tornado.web.authenticated
-    def get(self):
-        from papyri.render import GraphStore
+    def get(self, path=None):
+        from papyri.render import GraphStore, Key
         from papyri.render import ingest_dir
         from papyri.crosslink import encoder
 
         store = GraphStore(ingest_dir)
-        key = store.glob((None, None, None, "papyri"))[0]
+        if path is not None:
+            key = Key(*path.split("/"))
+            self.log.warning("Got", key)
+
+        else:
+            key = store.glob((None, None, None, "papyri"))[0]
         res = encoder.decode(store.get(key)).to_json()
 
         self.finish(json.dumps({"data": res}))
@@ -26,5 +31,5 @@ def setup_handlers(web_app):
 
     base_url = web_app.settings["base_url"]
     route_pattern = url_path_join(base_url, "papyri-lab", "get_example")
-    handlers = [(route_pattern, RouteHandler)]
+    handlers = [(route_pattern, RouteHandler), (route_pattern + r"/(.*)", RouteHandler)]
     web_app.add_handlers(host_pattern, handlers)

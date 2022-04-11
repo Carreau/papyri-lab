@@ -1,6 +1,30 @@
 import { ReactWidget } from '@jupyterlab/apputils';
+import { style } from 'typestyle';
 
 import React, { useState } from 'react';
+import { requestAPI } from './handler';
+
+export const PBStyle = style({
+  height: 'inherit',
+  overflow: 'scroll',
+  paddingLeft: '12px',
+  paddingRight: '12px'
+});
+
+export const AdmStyle = style({
+  borderLeft: '3px solid #0070f3',
+  paddingLeft: '1em',
+  $nest: {
+    '&>div': {
+      backgroundColor: 'rgba(0, 123, 255, 0.1)',
+      position: 'relative',
+      margin: '0 -1rem',
+      padding: '0.4rem 0.1rem 0.4rem 1.5rem',
+      fontWeight: 'bold',
+      textTransform: 'capitalize'
+    }
+  }
+});
 
 /**
  * React component for a counter.
@@ -9,10 +33,14 @@ import React, { useState } from 'react';
  */
 const PapyriComponent = (props: any): JSX.Element => {
   const [counter, setCounter] = useState(0);
+  const [data, setData] = useState([]);
+  const [mod, setMod] = useState('numpy');
+  const [ver, setVer] = useState('1.22.3');
+  const [kind, setKind] = useState('module');
+  const [path, setPath] = useState('numpy.dual');
   //const arb = props.data.arbitrary.map((x: any) => new Section(x.children, x.title));
-  const arb = props.data.arbitrary.map((x: any) => {
+  const arb = data.map((x: any) => {
     try {
-      console.log(x.children, x.title)
       const s = new Section(x.children, x.title);
       return s;
     } catch (e) {
@@ -20,17 +48,36 @@ const PapyriComponent = (props: any): JSX.Element => {
       return 1;
     }
   });
+
+  const regen = async (): Promise<void> => {
+    try {
+      const res = await requestAPI<any>(
+        `get_example/${mod}/${ver}/${kind}/${path}`
+      );
+      setData(res.data.arbitrary);
+    } catch (e) {
+      console.error(`Error in reply ${e}`);
+    }
+    setCounter(counter + 1);
+  };
+
+  const setAll = (mod: string, ver: string, kind: string, path: string) => {
+    setMod(mod);
+    setVer(ver);
+    setKind(kind);
+    setPath(path);
+  };
+
   return (
-    <div className='papyri-browser lm-Widget p-Widget lm-Panel p-Panel lm-BoxPanel p-BoxPanel jp-RenderedHTMLCommon'>
-      <p>You clicked {counter} times! With value </p>
-      <button
-        onClick={(): void => {
-          setCounter(counter + 1);
-        }}
-      >
-        Increment
-      </button>
-      {arb.map((x: any) => <DSection>{x}</DSection>)}
+    <div className={`papyri-browser  jp-RenderedHTMLCommon ${PBStyle}`}>
+      <input value={mod} onChange={e => setMod(e.target.value)} />
+      <input value={ver} onChange={e => setVer(e.target.value)} />
+      <input value={kind} onChange={e => setKind(e.target.value)} />
+      <input value={path} onChange={e => setPath(e.target.value)} />
+      <button onClick={regen}>Go</button>
+      {arb.map((x: any) => (
+        <DSection setAll={setAll}>{x}</DSection>
+      ))}
     </div>
   );
 };
@@ -60,10 +107,13 @@ export class PapyriWidget extends ReactWidget {
 
 const DSection = (props: any) => {
   const px: Section = props.children;
+  if (props.setAll == 0) {
+    console.log('Empty setAll Section');
+  }
   return (
     <div>
       <h1>{px.title}</h1>
-      {px.children.map((x: any) => dynamic_render(x))}
+      {px.children.map((x: any) => dynamic_render(x, props.setAll))}
     </div>
   );
 };
@@ -71,7 +121,9 @@ const DSection = (props: any) => {
 const DParagraph = (props: any) => {
   const px = props.children;
   if (px.children != undefined) {
-    return <p>{px.children.map((x: any) => dynamic_render(x))}</p>;
+    return (
+      <p>{px.children.map((x: any) => dynamic_render(x, props.setAll))}</p>
+    );
   } else {
     return (
       <div>
@@ -83,19 +135,46 @@ const DParagraph = (props: any) => {
 
 const DBulletList = (props: any) => {
   const ls: BulletList = props.children;
-  return <ul>{ls.children.map(dynamic_render)}</ul>;
+  return (
+    <ul>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</ul>
+  );
+};
+
+const DEnumeratedList = (props: any) => {
+  const ls: EnumeratedList = props.children;
+  return (
+    <ol>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</ol>
+  );
 };
 
 const DDefList = (props: any) => {
   const ls: DefList = props.children;
-  return <dl>{ls.children.map(dynamic_render)}</dl>;
+  if (props.setAll == 0) {
+    console.log('Empty setAll DefList');
+  }
+  return (
+    <dl>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</dl>
+  );
 };
 
 const DLink = (props: any) => {
   const lk: Link = props.children;
+  if (props.setAll == 0) {
+    console.log('Empty setAll Link');
+  }
   return (
     <code>
-      <a href={lk.reference} className="exists">
+      <a
+        href={lk.reference}
+        className="exists"
+        onClick={e => {
+          const r = lk.reference;
+          e.preventDefault();
+          e.stopPropagation();
+          e.nativeEvent.stopImmediatePropagation();
+          props.setAll(r.module, r.version, r.kind, r.path);
+        }}
+      >
         {lk.value}
       </a>
     </code>
@@ -104,17 +183,25 @@ const DLink = (props: any) => {
 
 const DDefListItem = (props: any) => {
   const ls: DefListItem = props.children;
+  if (props.setAll == 0) {
+    console.log('Emty setAll in Dbullet');
+  }
   return (
     <React.Fragment>
-      <dt>{dynamic_render(ls.dt)}</dt>
-      <dd>{ls.dd.map(dynamic_render)}</dd>
+      <dt>{dynamic_render(ls.dt, props.setAll)}</dt>
+      <dd>{ls.dd.map((x: any) => dynamic_render(x, props.setAll))}</dd>
     </React.Fragment>
   );
 };
 
 const DListItem = (props: any) => {
   const ls: ListItem = props.children;
-  return <li>{ls.children.map(dynamic_render)}</li>;
+  if (props.setAll == 0) {
+    console.log('Emty setAll in Dbullet');
+  }
+  return (
+    <li>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</li>
+  );
 };
 
 class Leaf {
@@ -124,9 +211,9 @@ class Leaf {
     this.value = data.value;
   }
 }
-class BlockMath extends Leaf { }
-class Words extends Leaf { }
-class BlockVerbatim extends Leaf { }
+class BlockMath extends Leaf {}
+class Words extends Leaf {}
+class BlockVerbatim extends Leaf {}
 
 class BlockDirective {
   argument: string;
@@ -163,6 +250,57 @@ class Link {
   }
 }
 
+class Emph {
+  value: Words;
+  constructor(data: any) {
+    this.value = new Words(data.value);
+  }
+}
+
+const DEmph = (props: any) => {
+  const emp: Emph = props.children;
+  console.log('WW', emp);
+  return (
+    <em>
+      <DWords>{emp.value}</DWords>
+    </em>
+  );
+};
+
+class ExternalLink {
+  value: string;
+  target: string;
+  constructor(data: any) {
+    this.value = data.value;
+    this.target = data.target;
+  }
+}
+
+const DExternalLink = (props: any) => {
+  const el: ExternalLink = props.children;
+  return <a href={el.target}>{el.value}(Ext)</a>;
+};
+
+class Directive {
+  value: string;
+  domain: string;
+  role: string;
+  constructor(data: any) {
+    this.value = data.value;
+    this.domain = data.domain;
+    this.role = data.role;
+  }
+}
+
+const DDirective = (props: any) => {
+  const d: Directive = props.children;
+  return (
+    <code>
+      :{d.domain}:{d.role}:{d.value}
+    </code>
+  );
+};
+
 class DefListItem {
   dt: Paragraph;
   dd: [any];
@@ -189,6 +327,28 @@ class Section {
     this.children = children.map(deserialise);
   }
 }
+
+class Admonition {
+  kind: string;
+  title: string;
+  children: [any];
+  constructor(data: any) {
+    this.title = data.title;
+    this.children = data.children;
+    this.kind = data.kind;
+  }
+}
+const DAdmonition = (props: any) => {
+  const adm: Admonition = props.children;
+  return (
+    <div className={AdmStyle}>
+      <div>
+        {adm.kind}:{adm.title}
+      </div>
+      {adm.children.map((x: any) => dynamic_render(x, props.setAll))}
+    </div>
+  );
+};
 
 class Verbatim {
   value: [string];
@@ -218,19 +378,31 @@ class BulletList {
   }
 }
 
+class EnumeratedList {
+  children: [ListItem];
+  constructor(data: any) {
+    this.children = data.children.map((x: any) => new ListItem(x));
+  }
+}
+
 const smap = new Map<string, any>([
-  ["Section", Section],
-  ["Paragraph", Paragraph],
-  ["Words", Words],
-  ["BlockDirective", BlockDirective],
-  ["DefList", DefList],
-  ["Link", Link],
-  ["Verbatim", Verbatim],
-  ["BlockVerbatim", BlockVerbatim],
-  ["BlockQuote", BlockQuote],
-  ["BlockMath", BlockMath],
-  ["ListItem", ListItem],
-  ["BulletList", BulletList],
+  ['Section', Section],
+  ['Paragraph', Paragraph],
+  ['Words', Words],
+  ['Emph', Emph],
+  ['BlockDirective', BlockDirective],
+  ['DefList', DefList],
+  ['Link', Link],
+  ['Verbatim', Verbatim],
+  ['Admonition', Admonition],
+  ['BlockVerbatim', BlockVerbatim],
+  ['BlockQuote', BlockQuote],
+  ['BlockMath', BlockMath],
+  ['ListItem', ListItem],
+  ['BulletList', BulletList],
+  ['EnumeratedList', EnumeratedList],
+  ['ExternalLink', ExternalLink],
+  ['Directive', Directive]
 ]);
 
 const DBlockVerbatim = (props: any) => {
@@ -239,7 +411,7 @@ const DBlockVerbatim = (props: any) => {
 };
 const DBlockQuote = (props: any) => {
   const q: BlockQuote = props.children;
-  return <pre>{q.value.map((x: any) => x + "\n")}</pre>;
+  return <pre>{q.value.map((x: any) => x + '\n')}</pre>;
 };
 
 const DVerbatim = (props: any) => {
@@ -252,9 +424,9 @@ const DBlockDirective = (props: any) => {
   return (
     <pre>
       .. {dir.name}:: {dir.argument}
-      {"\n"}
+      {'\n'}
       {dir.options}
-      {"    "}
+      {'    '}
       {dir.content}
     </pre>
   );
@@ -265,27 +437,36 @@ const DWords = (props: any) => {
 };
 
 const dmap = new Map<string, any>([
-  ["Section", DSection],
-  ["Paragraph", DParagraph],
-  ["Words", DWords],
-  ["BlockDirective", DBlockDirective],
-  ["DefList", DDefList],
-  ["Link", DLink],
-  ["Verbatim", DVerbatim],
-  ["BlockVerbatim", DBlockVerbatim],
-  ["BlockQuote", DBlockQuote],
-  ["DefListItem", DDefListItem],
-  ["ListItem", DListItem],
-  ["BulletList", DBulletList],
+  ['Section', DSection],
+  ['Paragraph', DParagraph],
+  ['Words', DWords],
+  ['Emph', DEmph],
+  ['BlockDirective', DBlockDirective],
+  ['DefList', DDefList],
+  ['Admonition', DAdmonition],
+  ['Link', DLink],
+  ['Verbatim', DVerbatim],
+  ['BlockVerbatim', DBlockVerbatim],
+  ['BlockQuote', DBlockQuote],
+  ['DefListItem', DDefListItem],
+  ['ListItem', DListItem],
+  ['BulletList', DBulletList],
+  ['EnumeratedList', DEnumeratedList],
+  ['ExternalLink', DExternalLink],
+  ['Directive', DDirective]
 ]);
 
-const dynamic_render = (obj: any) => {
+const dynamic_render = (obj: any, setAll: any) => {
   const oname = obj.constructor.name;
-  if (dmap.has(oname)) {
-    return React.createElement(dmap.get(oname), null, obj);
+  if (setAll == 0) {
+    console.log('Empty setAll in drander', obj.constructor.name, obj);
+    throw Error('Wrong');
   }
-  console.log("Unknown object type", obj.constructor.name);
-  return <div>{obj.constructor.name}</div>;
+  if (dmap.has(oname)) {
+    return React.createElement(dmap.get(oname), { setAll: setAll }, obj);
+  }
+  console.log('Unknown object type', obj, obj.constructor.name);
+  return <div>{JSON.stringify(obj)}</div>;
 };
 
 const deserialise = (item: any) => {
@@ -295,7 +476,7 @@ const deserialise = (item: any) => {
     const res = new co(item.data);
     return res;
   }
-  console.log("Seen", item);
+  console.log('Seen Unknown item suring deserialisation', item);
 
   return item;
 };
