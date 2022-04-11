@@ -1,4 +1,5 @@
 import {
+  ILayoutRestorer,
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
@@ -6,7 +7,11 @@ import { PapyriWidget } from './widget';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
+import {
+  ICommandPalette,
+  MainAreaWidget,
+  WidgetTracker
+} from '@jupyterlab/apputils';
 
 /**
  * Initialization data for the papyri-lab extension.
@@ -14,11 +19,12 @@ import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
-  optional: [ICommandPalette, ISettingRegistry],
+  optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
   activate: (
     app: JupyterFrontEnd,
     palette: ICommandPalette,
-    settingRegistry: ISettingRegistry
+    settingRegistry: ISettingRegistry,
+    restorer: ILayoutRestorer
   ) => {
     console.log('JupyterLab extension papyri-lab is activated!');
 
@@ -33,17 +39,23 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
     }
 
-    //const content = new Widget();
-    const content = new PapyriWidget();
-    const widget = new MainAreaWidget<PapyriWidget>({ content });
-    widget.id = 'papyri-browser';
-    widget.title.label = 'Papyri browser';
-    widget.title.closable = true;
+    let widget: MainAreaWidget<PapyriWidget>;
 
     const command = 'papyri:open';
     app.commands.addCommand(command, {
       label: 'Open papyri browser',
       execute: () => {
+        if (!widget) {
+          const content = new PapyriWidget();
+          widget = new MainAreaWidget<PapyriWidget>({ content });
+          widget.id = 'papyri-browser';
+          widget.title.label = 'Papyri browser';
+          widget.title.closable = true;
+        }
+        if (!tracker.has(widget)) {
+          // Track the state of the widget for later restoration
+          tracker.add(widget);
+        }
         if (!widget.isAttached) {
           // Attach the widget to the main work area if it's not there
           app.shell.add(widget, 'main');
@@ -55,6 +67,14 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Add the command to the palette.
 
     palette.addItem({ command, category: 'Papyri' });
+    // Track and restore the widget state
+    const tracker = new WidgetTracker<MainAreaWidget<PapyriWidget>>({
+      namespace: 'papyri'
+    });
+    restorer.restore(tracker, {
+      command,
+      name: () => 'papyri'
+    });
   }
 };
 

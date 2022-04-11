@@ -15,7 +15,7 @@ export const AdmStyle = style({
   borderLeft: '3px solid #0070f3',
   paddingLeft: '1em',
   $nest: {
-    '&>div': {
+    '&>div:first-child': {
       backgroundColor: 'rgba(0, 123, 255, 0.1)',
       position: 'relative',
       margin: '0 -1rem',
@@ -33,12 +33,14 @@ export const AdmStyle = style({
  */
 const PapyriComponent = (props: any): JSX.Element => {
   const [counter, setCounter] = useState(0);
+  const [stack, setStack] = useState([
+    ['numpy', '1.22.3', 'module', 'numpy.dual']
+  ]);
   const [data, setData] = useState([]);
   const [mod, setMod] = useState('numpy');
   const [ver, setVer] = useState('1.22.3');
   const [kind, setKind] = useState('module');
   const [path, setPath] = useState('numpy.dual');
-  //const arb = props.data.arbitrary.map((x: any) => new Section(x.children, x.title));
   const arb = data.map((x: any) => {
     try {
       const s = new Section(x.children, x.title);
@@ -49,12 +51,41 @@ const PapyriComponent = (props: any): JSX.Element => {
     }
   });
 
-  const regen = async (): Promise<void> => {
+  const refresh = async (): Promise<void> => {
+    return await regen(mod, ver, kind, path);
+  };
+
+  const back = () => {
+    stack.pop();
+    const old: any = stack.pop();
+    console.log('POP OLD', old);
+    setStack(stack);
+    setAll(old[0], old[1], old[2], old[3]);
+  };
+
+  const regen = async (
+    mod: string,
+    ver: string,
+    kind: string,
+    path: string
+  ): Promise<void> => {
+    const cc = stack.concat([[mod, ver, kind, path]]);
+    setStack(cc);
     try {
       const res = await requestAPI<any>(
         `get_example/${mod}/${ver}/${kind}/${path}`
       );
-      setData(res.data.arbitrary);
+      const ar2 = res.data.arbitrary;
+      const content = res.data._content;
+      for (const key in content) {
+        const value = content[key];
+        if (value.children.length > 0) {
+          console.log(key, value);
+          const s = { children: value.children, title: key };
+          ar2.push(s);
+        }
+      }
+      setData(ar2);
     } catch (e) {
       console.error(`Error in reply ${e}`);
     }
@@ -66,6 +97,11 @@ const PapyriComponent = (props: any): JSX.Element => {
     setVer(ver);
     setKind(kind);
     setPath(path);
+    regen(mod, ver, kind, path);
+  };
+
+  const _to_papyri = () => {
+    setAll('papyri', '0.0.8', 'module', 'papyri');
   };
 
   return (
@@ -74,7 +110,9 @@ const PapyriComponent = (props: any): JSX.Element => {
       <input value={ver} onChange={e => setVer(e.target.value)} />
       <input value={kind} onChange={e => setKind(e.target.value)} />
       <input value={path} onChange={e => setPath(e.target.value)} />
-      <button onClick={regen}>Go</button>
+      <button onClick={refresh}>Go</button>
+      <button onClick={_to_papyri}>papyri</button>
+      <button onClick={back}>Back</button>
       {arb.map((x: any) => (
         <DSection setAll={setAll}>{x}</DSection>
       ))}
@@ -159,13 +197,11 @@ const DDefList = (props: any) => {
 
 const DLink = (props: any) => {
   const lk: Link = props.children;
-  if (props.setAll == 0) {
-    console.log('Empty setAll Link');
-  }
+  const r = lk.reference;
   return (
-    <code>
+    <code className="DLINK">
       <a
-        href={lk.reference}
+        href={`${r.module}/${r.version}/${r.kind}/${r.path}`}
         className="exists"
         onClick={e => {
           const r = lk.reference;
@@ -250,6 +286,29 @@ class Link {
   }
 }
 
+class Param {
+  param: string;
+  type_: string;
+  desc: [any];
+  constructor(data: any) {
+    this.param = data.param;
+    this.type_ = data.type_;
+    this.desc = data.desc.map(deserialise);
+  }
+}
+
+const DParam = (props: any) => {
+  const p: Param = props.children;
+  return (
+    <React.Fragment>
+      <dt>
+        {p.param} : {p.type_}
+      </dt>
+      <dd>{dynamic_render_many(p.desc, props.setAll)}</dd>
+    </React.Fragment>
+  );
+};
+
 class Emph {
   value: Words;
   constructor(data: any) {
@@ -259,7 +318,6 @@ class Emph {
 
 const DEmph = (props: any) => {
   const emp: Emph = props.children;
-  console.log('WW', emp);
   return (
     <em>
       <DWords>{emp.value}</DWords>
@@ -334,7 +392,7 @@ class Admonition {
   children: [any];
   constructor(data: any) {
     this.title = data.title;
-    this.children = data.children;
+    this.children = data.children.map(deserialise);
     this.kind = data.kind;
   }
 }
@@ -390,6 +448,7 @@ const smap = new Map<string, any>([
   ['Paragraph', Paragraph],
   ['Words', Words],
   ['Emph', Emph],
+  ['Param', Param],
   ['BlockDirective', BlockDirective],
   ['DefList', DefList],
   ['Link', Link],
@@ -441,6 +500,7 @@ const dmap = new Map<string, any>([
   ['Paragraph', DParagraph],
   ['Words', DWords],
   ['Emph', DEmph],
+  ['Param', DParam],
   ['BlockDirective', DBlockDirective],
   ['DefList', DDefList],
   ['Admonition', DAdmonition],
@@ -469,6 +529,10 @@ const dynamic_render = (obj: any, setAll: any) => {
   return <div>{JSON.stringify(obj)}</div>;
 };
 
+const dynamic_render_many = (objs: any, setAll: any) => {
+  return objs.map((x: any) => dynamic_render(x, setAll));
+};
+
 const deserialise = (item: any) => {
   const ty: string = item.type;
   if (smap.has(ty)) {
@@ -476,7 +540,7 @@ const deserialise = (item: any) => {
     const res = new co(item.data);
     return res;
   }
-  console.log('Seen Unknown item suring deserialisation', item);
+  console.trace('Seen Unknown item during deserialisation', item, ty);
 
   return item;
 };
