@@ -342,6 +342,48 @@ const DExternalLink = (props: any) => {
   return <a href={el.target}>{el.value}(Ext)</a>;
 };
 
+class Token {
+  type_: string | null;
+  link: Link | string;
+  disp: string;
+
+  constructor(data: any) {
+    this.type_ = data.type;
+    if (data.link.type === 'str') {
+      this.disp = 'str';
+      this.link = data.link.data;
+    } else {
+      this.disp = 'link';
+      this.link = new Link(data.link.data);
+    }
+  }
+}
+
+const DToken = (props: any) => {
+  const t: Token = props.children;
+  if (t.disp === 'str') {
+    return <span>{t.link}</span>;
+  } else {
+    return <DLink setAll={props.setAll}>{t.link}</DLink>;
+  }
+};
+
+class Code2 {
+  entries: [Token];
+  out: string;
+  ce_status: string;
+
+  constructor(data: any) {
+    this.entries = data.entries.map((x: any) => new Token(x));
+    this.out = data.out;
+    this.ce_status = data.ce_status;
+  }
+}
+
+const DCode2 = (props: any) => {
+  return <pre>{dynamic_render_many(props.children.entries, props.setAll)}</pre>;
+};
+
 class Directive {
   value: string;
   domain: string;
@@ -463,6 +505,7 @@ const smap = new Map<string, any>([
   ['ListItem', ListItem],
   ['BulletList', BulletList],
   ['EnumeratedList', EnumeratedList],
+  ['Code2', Code2],
   ['ExternalLink', ExternalLink],
   ['Directive', Directive]
 ]);
@@ -515,13 +558,15 @@ const dmap = new Map<string, any>([
   ['ListItem', DListItem],
   ['BulletList', DBulletList],
   ['EnumeratedList', DEnumeratedList],
+  ['Token', DToken],
+  ['Code2', DCode2],
   ['ExternalLink', DExternalLink],
   ['Directive', DDirective]
 ]);
 
 const dynamic_render = (obj: any, setAll: any) => {
   const oname = obj.constructor.name;
-  if (setAll == 0) {
+  if (setAll === undefined) {
     console.log('Empty setAll in drander', obj.constructor.name, obj);
     throw Error('Wrong');
   }
