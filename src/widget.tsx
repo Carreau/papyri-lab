@@ -58,7 +58,6 @@ const PapyriComponent = (props: any): JSX.Element => {
   const back = () => {
     stack.pop();
     const old: any = stack.pop();
-    console.log('POP OLD', old);
     setStack(stack);
     setAll(old[0], old[1], old[2], old[3]);
   };
@@ -76,13 +75,17 @@ const PapyriComponent = (props: any): JSX.Element => {
         `get_example/${mod}/${ver}/${kind}/${path}`
       );
       const ar2 = res.data.arbitrary;
+      if (res.data.example_section_data.children.length != 0) {
+        ar2.push({
+          children: res.data.example_section_data.children,
+          title: 'Examples'
+        });
+      }
       const content = res.data._content;
       for (const key in content) {
         const value = content[key];
         if (value.children.length > 0) {
-          console.log(key, value);
-          const s = { children: value.children, title: key };
-          ar2.push(s);
+          ar2.push({ children: value.children, title: key });
         }
       }
       setData(ar2);
