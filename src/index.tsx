@@ -2,6 +2,8 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
+import { PapyriWidget } from './widget';
+
 
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
@@ -9,7 +11,21 @@ import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { requestAPI } from './handler';
 import { ICommandPalette, MainAreaWidget } from '@jupyterlab/apputils';
 
-import { Widget } from '@lumino/widgets';
+//import { Widget } from '@lumino/widgets';
+
+const _request_api_example = async () => {
+
+  try {
+    const data = requestAPI<any>('get_example');
+    console.log('Async Func:', data);
+  } catch (reason) {
+    console.error(
+      `The papyri_lab server extension appears to be missing.\n${reason}`
+    );
+  }
+
+}
+
 
 /**
  * Initialization data for the papyri-lab extension.
@@ -34,8 +50,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
         });
     }
 
-    const content = new Widget();
-    const widget = new MainAreaWidget({ content });
+    //const content = new Widget();
+    const content = new PapyriWidget();
+    const widget = new MainAreaWidget<PapyriWidget>({ content });
     widget.id = 'papyri-browser';
     widget.title.label = 'Papyri browser';
     widget.title.closable = true;
@@ -55,10 +72,19 @@ const plugin: JupyterFrontEndPlugin<void> = {
     // Add the command to the palette.
 
     palette.addItem({ command, category: 'Papyri' });
-
+    _request_api_example()
     requestAPI<any>('get_example')
       .then(data => {
-        console.log(data);
+        console.log('Got reply:',data);
+        content.setDX(data.data);
+        console.log('content set');
+
+  //      const arb = data.data.arbitrary.map((x: any) => new Section(x.children, x.title));
+  //      const domContainer = document.getElementById("papyri-root");
+  //ReactDOM.render(
+  //  arb.map((x: any) => <DSection>{x}</DSection>),
+  //  domContainer
+  //);
       })
       .catch(reason => {
         console.error(

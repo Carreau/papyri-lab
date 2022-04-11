@@ -10,9 +10,15 @@ class RouteHandler(APIHandler):
     # Jupyter server
     @tornado.web.authenticated
     def get(self):
-        self.finish(json.dumps({
-            "data": "This is /papyri-lab/get_example endpoint!"
-        }))
+        from papyri.render import GraphStore
+        from papyri.render import ingest_dir
+        from papyri.crosslink import encoder
+
+        store = GraphStore(ingest_dir)
+        key = store.glob((None, None, None, "papyri"))[0]
+        res = encoder.decode(store.get(key)).to_json()
+
+        self.finish(json.dumps({"data": res}))
 
 
 def setup_handlers(web_app):

@@ -1,2 +1,8 @@
 
 @import url('base.css');
+
+.papyri-browser {
+    display: block;
+    overflow: auto;
+    border: solid thin red;
+}
