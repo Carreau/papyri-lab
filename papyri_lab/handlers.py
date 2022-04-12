@@ -22,7 +22,7 @@ class RouteHandler(APIHandler):
             if kind == "api":
                 kind = "module"
             key = Key(module, version, kind, path)
-            self.log.warning("Got", key)
+            self.log.warning("Got %s", key)
 
         else:
             key = Key(None, None, None, "papyri")
