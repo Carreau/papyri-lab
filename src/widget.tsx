@@ -75,18 +75,19 @@ const PapyriComponent = (props: any): JSX.Element => {
         `get_example/${mod}/${ver}/${kind}/${path}`
       );
       const ar2 = res.data.arbitrary;
-      if (res.data.example_section_data.children.length != 0) {
-        ar2.push({
-          children: res.data.example_section_data.children,
-          title: 'Examples'
-        });
-      }
       const content = res.data._content;
+
       for (const key in content) {
         const value = content[key];
         if (value.children.length > 0) {
           ar2.push({ children: value.children, title: key });
         }
+      }
+      if (res.data.example_section_data.children.length != 0) {
+        ar2.push({
+          children: res.data.example_section_data.children,
+          title: 'Examples'
+        });
       }
       setData(ar2);
     } catch (e) {
