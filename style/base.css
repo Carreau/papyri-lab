@@ -4,11 +4,23 @@
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
 
-@import url('base.css');
-
 .papyri-browser {
-  color: green;
   display: block;
   overflow: auto;
   border: solid thin green;
+}
+
+.papyri-browser.jp-RenderedHTMLCommon .highlight > span > code {
+  background-color: transparent;
+  padding: 0;
+  color: unset;
+}
+
+.papyri-browser .highlight a.exists {
+  color: unset;
+  font-weight: unset;
+}
+
+.papyri-browser .highlight {
+  margin-bottom: 1em;
 }

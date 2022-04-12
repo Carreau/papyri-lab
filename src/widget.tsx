@@ -106,6 +106,9 @@ const PapyriComponent = (props: any): JSX.Element => {
   const _to_papyri = () => {
     setAll('papyri', '0.0.8', 'module', 'papyri');
   };
+  const _to_einsum = () => {
+    setAll('numpy', '1.22.3', 'module', 'numpy.einsum');
+  };
 
   return (
     <div className={`papyri-browser  jp-RenderedHTMLCommon ${PBStyle}`}>
@@ -115,6 +118,7 @@ const PapyriComponent = (props: any): JSX.Element => {
       <input value={path} onChange={e => setPath(e.target.value)} />
       <button onClick={refresh}>Go</button>
       <button onClick={_to_papyri}>papyri</button>
+      <button onClick={_to_einsum}>einsum</button>
       <button onClick={back}>Back</button>
       {arb.map((x: any) => (
         <DSection setAll={setAll}>{x}</DSection>
@@ -343,7 +347,7 @@ const DExternalLink = (props: any) => {
 };
 
 class Token {
-  type_: string | null;
+  type_: string;
   link: Link | string;
   disp: string;
 
@@ -362,9 +366,24 @@ class Token {
 const DToken = (props: any) => {
   const t: Token = props.children;
   if (t.disp === 'str') {
-    return <span>{t.link}</span>;
+    if (t.link === '\n') {
+      return (
+        <React.Fragment>
+          <br />
+          <span className="nsl">... </span>
+        </React.Fragment>
+      );
+    } else {
+      return <span className={t.type_}>{t.link}</span>;
+    }
   } else {
-    return <DLink setAll={props.setAll}>{t.link}</DLink>;
+    return (
+      <span className={t.type_}>
+        <DLink className={t.type_} setAll={props.setAll}>
+          {t.link}
+        </DLink>
+      </span>
+    );
   }
 };
 
@@ -381,7 +400,16 @@ class Code2 {
 }
 
 const DCode2 = (props: any) => {
-  return <pre>{dynamic_render_many(props.children.entries, props.setAll)}</pre>;
+  return (
+    <React.Fragment>
+      <pre className={`highlight ${props.children.ce_status}`}>
+        <span className="nsl">{'>>> '}</span>
+        {dynamic_render_many(props.children.entries, props.setAll)}
+        <br />
+        {props.children.out}
+      </pre>
+    </React.Fragment>
+  );
 };
 
 class Directive {
@@ -398,7 +426,7 @@ class Directive {
 const DDirective = (props: any) => {
   const d: Directive = props.children;
   return (
-    <code>
+    <code className="not-implemented inline-directive">
       :{d.domain}:{d.role}:{d.value}
     </code>
   );
@@ -520,8 +548,8 @@ const DBlockQuote = (props: any) => {
 };
 
 const DVerbatim = (props: any) => {
-  const verb: BlockVerbatim = props.children;
-  return <code>{verb.value}</code>;
+  const verb: Verbatim = props.children;
+  return <code className="inline-verbatim">{verb.value}</code>;
 };
 
 const DBlockDirective = (props: any) => {
