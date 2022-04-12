@@ -33,10 +33,23 @@ class RouteHandler(APIHandler):
         self.finish(json.dumps({"data": res}))
 
 
+# /papyri-lab/get_example/numpy/1.22.3/module/numpy.einsum?1649790118903
+
+
 def setup_handlers(web_app):
     host_pattern = ".*$"
+    import os.path
+
+    # pp = os.path.expanduser('~/.papyri/ingest/skimage/0.17.2/assets/skimage-logo.png')
+    pp = os.path.expanduser("~/.papyri/ingest")
 
     base_url = web_app.settings["base_url"]
     route_pattern = url_path_join(base_url, "papyri-lab", "get_example")
-    handlers = [(route_pattern, RouteHandler), (route_pattern + r"/(.*)", RouteHandler)]
+    static_pattern = url_path_join(base_url, "papyri-lab", "static")
+    handlers = [
+        (route_pattern, RouteHandler),
+        (route_pattern + r"/(.*)", RouteHandler),
+        (static_pattern + r"/(.*)", tornado.web.StaticFileHandler, {"path": pp}),
+    ]
+    print(handlers)
     web_app.add_handlers(host_pattern, handlers)

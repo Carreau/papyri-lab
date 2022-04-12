@@ -224,6 +224,15 @@ const DLink = (props: any) => {
   );
 };
 
+const DFig = (props: any) => {
+  const fig: Fig = props.children;
+  return (
+    <img
+      src={`/papyri-lab/static/${fig.module}/${fig.version}/assets/${fig.path}`}
+    />
+  );
+};
+
 const DDefListItem = (props: any) => {
   const ls: DefListItem = props.children;
   if (props.setAll == 0) {
@@ -256,6 +265,7 @@ class Leaf {
 }
 class BlockMath extends Leaf {}
 class Words extends Leaf {}
+class Math extends Leaf {}
 class BlockVerbatim extends Leaf {}
 
 class BlockDirective {
@@ -290,6 +300,18 @@ class Link {
     this.reference = data.reference;
     this.kind = data.kind;
     this.exists = data.exists;
+  }
+}
+
+class Fig {
+  module: string;
+  version: string;
+  path: string;
+  constructor(data: any) {
+    console.log('Fig data', data);
+    this.module = data.value.module;
+    this.version = data.value.version;
+    this.path = data.value.path;
   }
 }
 
@@ -344,6 +366,11 @@ class ExternalLink {
 const DExternalLink = (props: any) => {
   const el: ExternalLink = props.children;
   return <a href={el.target}>{el.value}(Ext)</a>;
+};
+
+const DBlockMath = (props: any) => {
+  const m: BlockMath = props.children;
+  return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
 class Token {
@@ -521,10 +548,12 @@ const smap = new Map<string, any>([
   ['Paragraph', Paragraph],
   ['Words', Words],
   ['Emph', Emph],
+  ['Math', Math],
   ['Param', Param],
   ['BlockDirective', BlockDirective],
   ['DefList', DefList],
   ['Link', Link],
+  ['Fig', Fig],
   ['Verbatim', Verbatim],
   ['Admonition', Admonition],
   ['BlockVerbatim', BlockVerbatim],
@@ -570,26 +599,28 @@ const DWords = (props: any) => {
 };
 
 const dmap = new Map<string, any>([
-  ['Section', DSection],
-  ['Paragraph', DParagraph],
-  ['Words', DWords],
-  ['Emph', DEmph],
-  ['Param', DParam],
-  ['BlockDirective', DBlockDirective],
-  ['DefList', DDefList],
   ['Admonition', DAdmonition],
-  ['Link', DLink],
-  ['Verbatim', DVerbatim],
-  ['BlockVerbatim', DBlockVerbatim],
+  ['BlockDirective', DBlockDirective],
   ['BlockQuote', DBlockQuote],
-  ['DefListItem', DDefListItem],
-  ['ListItem', DListItem],
+  ['BlockVerbatim', DBlockVerbatim],
   ['BulletList', DBulletList],
-  ['EnumeratedList', DEnumeratedList],
-  ['Token', DToken],
   ['Code2', DCode2],
+  ['DefList', DDefList],
+  ['DefListItem', DDefListItem],
+  ['Directive', DDirective],
+  ['Emph', DEmph],
+  ['EnumeratedList', DEnumeratedList],
   ['ExternalLink', DExternalLink],
-  ['Directive', DDirective]
+  ['Link', DLink],
+  ['Fig', DFig],
+  ['ListItem', DListItem],
+  ['BlockMath', DBlockMath],
+  ['Paragraph', DParagraph],
+  ['Param', DParam],
+  ['Section', DSection],
+  ['Token', DToken],
+  ['Verbatim', DVerbatim],
+  ['Words', DWords]
 ]);
 
 const dynamic_render = (obj: any, setAll: any) => {
