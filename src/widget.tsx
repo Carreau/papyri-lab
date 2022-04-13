@@ -75,7 +75,33 @@ const PapyriComponent = (props: any): JSX.Element => {
         `get_example/${mod}/${ver}/${kind}/${path}`
       );
       const ar2 = res.data.arbitrary;
+      if (res.data.signature !== undefined) {
+        console.log('Signature', res.data.signature);
+        const dx = {
+          children: [
+            {
+              type: 'Paragraph',
+              data: {
+                children: [
+                  { type: 'Words', data: { value: res.data.signature.value } }
+                ]
+              }
+            }
+          ]
+        };
+        ar2.push(dx);
+      }
+
       const content = res.data._content;
+
+      console.log('OS', res.data.ordered_sections, Object.keys(content));
+      for (const key of res.data.ordered_sections) {
+        const value = content[key];
+        if (value !== undefined) {
+          ar2.push({ children: value.children, title: key });
+          delete content[key];
+        }
+      }
 
       for (const key in content) {
         const value = content[key];
@@ -83,7 +109,7 @@ const PapyriComponent = (props: any): JSX.Element => {
           ar2.push({ children: value.children, title: key });
         }
       }
-      if (res.data.example_section_data.children.length != 0) {
+      if (res.data.example_section_data.children.length !== 0) {
         ar2.push({
           children: res.data.example_section_data.children,
           title: 'Examples'
@@ -482,7 +508,11 @@ class Section {
   children: [any];
 
   constructor(children: any, title: string) {
-    this.title = title;
+    if (['Extended Summary', 'Summary'].includes(title)) {
+      this.title = '';
+    } else {
+      this.title = title;
+    }
     this.children = children.map(deserialise);
   }
 }
