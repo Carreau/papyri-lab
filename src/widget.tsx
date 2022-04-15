@@ -3,6 +3,8 @@ import { style } from 'typestyle';
 
 import React, { useState } from 'react';
 import { requestAPI } from './handler';
+import { ServerConnection } from '@jupyterlab/services';
+import { URLExt } from '@jupyterlab/coreutils';
 
 export const PBStyle = style({
   height: 'inherit',
@@ -41,6 +43,7 @@ const PapyriComponent = (props: any): JSX.Element => {
   const [ver, setVer] = useState('1.22.3');
   const [kind, setKind] = useState('module');
   const [path, setPath] = useState('numpy.dual');
+
   const arb = data.map((x: any) => {
     try {
       const s = new Section(x.children, x.title);
@@ -253,11 +256,18 @@ const DLink = (props: any) => {
 
 const DFig = (props: any) => {
   const fig: Fig = props.children;
-  return (
-    <img
-      src={`/papyri-lab/static/${fig.module}/${fig.version}/assets/${fig.path}`}
-    />
+  const settings = ServerConnection.makeSettings();
+  console.log('SETTINGS', settings, settings.baseUrl);
+  const img_url = URLExt.join(
+    settings.baseUrl,
+    'papyri-lab',
+    'static',
+    fig.module,
+    fig.version,
+    'assets',
+    fig.path
   );
+  return <img src={img_url} />;
 };
 
 const DDefListItem = (props: any) => {
