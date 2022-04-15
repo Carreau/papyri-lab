@@ -34,10 +34,6 @@ body {
   margin-left: 0;
 }
 
-.not-implemented {
-  border: thin solid orange;
-}
-
 p {
   text-align: justify;
 }
@@ -398,4 +394,9 @@ nav a {
 .head {
   font-family: monospace;
   color: var(--nc-lk-1);
+}
+
+.not-implemented,
+.jp-RenderedHTMLCommon code.not-implemented {
+  border: 1px solid orange;
 }

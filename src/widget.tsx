@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { requestAPI } from './handler';
 import { ServerConnection } from '@jupyterlab/services';
 import { URLExt } from '@jupyterlab/coreutils';
+import { Provider, Node } from '@nteract/mathjax';
 
 export const PBStyle = style({
   height: 'inherit',
@@ -144,7 +145,14 @@ const PapyriComponent = (props: any): JSX.Element => {
     <div className={`papyri-browser  jp-RenderedHTMLCommon ${PBStyle}`}>
       <input value={mod} onChange={e => setMod(e.target.value)} />
       <input value={ver} onChange={e => setVer(e.target.value)} />
-      <input value={kind} onChange={e => setKind(e.target.value)} />
+      <select value={kind} onChange={e => setKind(e.target.value)}>
+        <option value="api">API</option>
+        <option value="docs" selected>
+          {' '}
+          Narrative{' '}
+        </option>
+        <option value="gallery">Pas là</option>
+      </select>
       <input value={path} onChange={e => setPath(e.target.value)} />
       <button onClick={refresh}>Go</button>
       <button onClick={_to_papyri}>papyri</button>
@@ -402,12 +410,33 @@ class ExternalLink {
 
 const DExternalLink = (props: any) => {
   const el: ExternalLink = props.children;
-  return <a href={el.target}>{el.value}(Ext)</a>;
+  return (
+    <a className="external" href={el.target}>
+      {el.value}
+    </a>
+  );
+};
+
+const DMath = (props: any) => {
+  const m: BlockMath = props.children;
+  return (
+    <span className="not-implemented">
+      <Provider>
+        <Node inline>{m.value}</Node>
+      </Provider>
+    </span>
+  );
+  //return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
 const DBlockMath = (props: any) => {
   const m: BlockMath = props.children;
-  return <div className="not-implemented">{`$$${m.value}$$`}</div>;
+  return (
+    <Provider>
+      <Node>{m.value}</Node>
+    </Provider>
+  );
+  //return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
 class Token {
@@ -656,6 +685,7 @@ const dmap = new Map<string, any>([
   [Fig.name, DFig],
   [ListItem.name, DListItem],
   [BlockMath.name, DBlockMath],
+  [Math.name, DMath],
   [Paragraph.name, DParagraph],
   [Param.name, DParam],
   [Section.name, DSection],
