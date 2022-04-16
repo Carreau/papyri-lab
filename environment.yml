@@ -1,0 +1,11 @@
+name: papyri
+channels:
+- conda-forge
+dependencies:
+- matplotlib-base
+- matplotlib
+- numpy
+- scipy
+- jupyterlab>=3.1
+- flit
+- python=>3.9

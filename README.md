@@ -2,6 +2,12 @@
 
 [![Github Actions Status](https://github.com/Carreau/papyri-lab/workflows/Build/badge.svg)](https://github.com/Carreau/papyri-lab/actions/workflows/build.yml)
 
+# papyri-lab extension
+
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://beta.mybinder.org/v2/gh/Carreau/papyri-lab/HEAD?urlpath=lab/tree/index.md) (Jupyter Lab)
+
+
 A jupyter lab extension for papyri
 
 
