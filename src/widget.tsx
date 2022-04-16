@@ -41,6 +41,7 @@ const PapyriComponent = (props: any): JSX.Element => {
   ]);
   const [data, setData] = useState([]);
   const [mod, setMod] = useState('numpy');
+  const [book, setBook] = useState('-');
   const [ver, setVer] = useState('1.22.3');
   const [kind, setKind] = useState('module');
   const [path, setPath] = useState('numpy.dual');
@@ -134,11 +135,23 @@ const PapyriComponent = (props: any): JSX.Element => {
     regen(mod, ver, kind, path);
   };
 
-  const _to_papyri = () => {
-    setAll('papyri', '0.0.8', 'module', 'papyri');
-  };
-  const _to_einsum = () => {
-    setAll('numpy', '1.22.3', 'module', 'numpy.einsum');
+  const _to_bookmark = (v:any) => {
+    if (v === '-'){
+        return
+    }
+    setBook(v)
+
+    console.log('Bookm', v);
+    const bookm:any={
+        'papyri':['papyri', '0.0.8', 'module', 'papyri'],
+        'papyri:index':['papyri', '0.0.8', 'docs', ':index'],
+        'numpy.einsum':['numpy', '1.22.3', 'module', 'numpy.einsum'],
+        'dpss':['scipy', '*', 'api', 'scipy.signal.windows._windows.dpss'],
+        'numpy:dev:index':['numpy', '1.22.3', 'docs', 'dev:index']
+    };
+    const target:any = bookm[v];
+    console.log('TGT', target, v);
+    setAll(target[0],target[1],target[2],target[3]);
   };
 
   return (
@@ -153,11 +166,21 @@ const PapyriComponent = (props: any): JSX.Element => {
         </option>
         <option value="gallery">Pas là</option>
       </select>
-      <input value={path} onChange={e => setPath(e.target.value)} />
+      <input value={path} onChange={e => setKind(e.target.value)} />
       <button onClick={refresh}>Go</button>
-      <button onClick={_to_papyri}>papyri</button>
-      <button onClick={_to_einsum}>einsum</button>
       <button onClick={back}>Back</button>
+      <br/>
+      Bookmarks:
+
+      <select value={book} onChange={e => _to_bookmark(e.target.value)}>
+        <option value="-">-</option>
+        <option value="papyri">Papyri (module)</option>
+        <option value="papyri:index">Papyri (index.rst)</option>
+        <option value="numpy.einsum">Numpy Einsum</option>
+        <option value="numpy:dev:index">Numpy Dev Index</option>
+        <option value="dpss">scipy.signal.windows.dpss</option>
+      </select>
+      <hr/>
       {arb.map((x: any) => (
         <DSection setAll={setAll}>{x}</DSection>
       ))}
