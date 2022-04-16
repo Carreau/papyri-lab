@@ -1,1 +1,8 @@
-# index.md
+# Trying the extension
+
+Currently the best way to try the extension is via the binder. Look at the
+`PostBuild` script if you want to try on your own machine.
+
+
+```
+
