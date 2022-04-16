@@ -1,4 +1,3 @@
-pushd
 cd ~
 conda env list
 which python
@@ -12,7 +11,8 @@ papyri build-parser
 papyri gen examples/papyri.toml
 papyri ingest ~/.papyri/data/*
 papyri install numpy scipy networkx
-popd
+cd ..
+cd papyri-lab
 pip install .
 cd -
 
