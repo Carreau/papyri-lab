@@ -376,12 +376,29 @@ class Fig {
   version: string;
   path: string;
   constructor(data: any) {
-    console.log('Fig data', data);
     this.module = data.value.module;
     this.version = data.value.version;
     this.path = data.value.path;
   }
 }
+
+class Parameters {
+  children: [Param];
+  constructor(props: any) {
+    this.children = props.children.map((x:any)=> new Param({...x, setAll:props.setAll}));
+  }
+}
+
+
+const DParameters = (props: any) => {
+  const p: Parameters = props.children;
+  return (
+    <React.Fragment>
+      {dynamic_render_many(p.children, props.setAll)}
+    </React.Fragment>
+  );
+};
+
 
 class Param {
   param: string;
@@ -643,6 +660,7 @@ const smap = new Map<string, any>([
   ['Emph', Emph],
   ['Math', Math],
   ['Param', Param],
+  ['Parameters', Parameters],
   ['BlockDirective', BlockDirective],
   ['DefList', DefList],
   ['Link', Link],
@@ -711,6 +729,7 @@ const dmap = new Map<string, any>([
   [Math.name, DMath],
   [Paragraph.name, DParagraph],
   [Param.name, DParam],
+  [Parameters.name, DParameters],
   [Section.name, DSection],
   [Token.name, DToken],
   [Verbatim.name, DVerbatim],
