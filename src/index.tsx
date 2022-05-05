@@ -1,7 +1,7 @@
 import {
   ILayoutRestorer,
   JupyterFrontEnd,
-  JupyterFrontEndPlugin
+  JupyterFrontEndPlugin,
 } from '@jupyterlab/application';
 import { PapyriWidget } from './widget';
 
@@ -10,7 +10,7 @@ import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import {
   ICommandPalette,
   MainAreaWidget,
-  WidgetTracker
+  WidgetTracker,
 } from '@jupyterlab/apputils';
 
 /**
@@ -20,23 +20,21 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
-  activate: (
+  activate: async (
     app: JupyterFrontEnd,
     palette: ICommandPalette,
     settingRegistry: ISettingRegistry,
-    restorer: ILayoutRestorer
+    restorer: ILayoutRestorer,
   ) => {
     console.log('JupyterLab extension papyri-lab is activated!');
 
     if (settingRegistry) {
-      settingRegistry
-        .load(plugin.id)
-        .then(settings => {
-          console.log('papyri-lab settings loaded:', settings.composite);
-        })
-        .catch(reason => {
-          console.error('Failed to load settings for papyri-lab.', reason);
-        });
+      try {
+        const settings = (await settingRegistry.load(plugin.id)).composite;
+        console.log('papyri-lab settings loaded:', settings.composite);
+      } catch (reason) {
+        console.error('Failed to load settings for papyri-lab.', reason);
+      }
     }
 
     let widget: MainAreaWidget<PapyriWidget>;
@@ -62,20 +60,20 @@ const plugin: JupyterFrontEndPlugin<void> = {
         }
         // Activate the widget
         app.shell.activateById(widget.id);
-      }
+      },
     });
     // Add the command to the palette.
 
     palette.addItem({ command, category: 'Papyri' });
     // Track and restore the widget state
     const tracker = new WidgetTracker<MainAreaWidget<PapyriWidget>>({
-      namespace: 'papyri'
+      namespace: 'papyri',
     });
     restorer.restore(tracker, {
       command,
-      name: () => 'papyri'
+      name: () => 'papyri',
     });
-  }
+  },
 };
 
 export default plugin;
