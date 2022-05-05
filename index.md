@@ -5,8 +5,7 @@ Currently the best way to try the extension is via the binder. Look at the
 
 # Trying papyri on binder.
 
-
-In order to keep the image small, documentation bundles are not installed, 
+In order to keep the image small, documentation bundles are not installed,
 open a terminal and issue:
 
 ```
@@ -20,15 +19,9 @@ features are implemented.
 
 You can also try to `conda install` and then `papyri install` a few other
 packages like `astropy`, `networkx`, `dask`, `distributed`, `skimage`, but it's
-not guarantied to work as I haven't built all the version. 
+not guarantied to work as I haven't built all the version.
 
 Once this is all done, Use the command palette (Ctrl-Shift-C/Cmd-Shift-C) and look for "open papyri
 browser".
 
 It has basic features with two bookmarks.
-
-
-
-
-
-
