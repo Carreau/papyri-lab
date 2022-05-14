@@ -7,14 +7,17 @@ import { ServerConnection } from '@jupyterlab/services';
 import { URLExt } from '@jupyterlab/coreutils';
 import { Provider, Node } from '@nteract/mathjax';
 
-export const PBStyle = style({
+import PapyriToolbar from './PapyriToolbar';
+import { ILocation, IBookmark } from './location';
+
+const PBStyle = style({
   height: 'inherit',
   overflow: 'scroll',
   paddingLeft: '12px',
-  paddingRight: '12px'
+  paddingRight: '12px',
 });
 
-export const AdmStyle = style({
+const AdmStyle = style({
   borderLeft: '3px solid #0070f3',
   paddingLeft: '1em',
   $nest: {
@@ -24,27 +27,151 @@ export const AdmStyle = style({
       margin: '0 -1rem',
       padding: '0.4rem 0.1rem 0.4rem 1.5rem',
       fontWeight: 'bold',
-      textTransform: 'capitalize'
-    }
-  }
+      textTransform: 'capitalize',
+    },
+  },
 });
 
 /**
- * React component for a counter.
- *
- * @returns The React component
+ * @returns Main Papyri component; contains documentation and navigation widgets
  */
-const PapyriComponent = (props: any): JSX.Element => {
-  const [counter, setCounter] = useState(0);
-  const [stack, setStack] = useState([
-    ['numpy', '1.22.3', 'module', 'numpy.dual']
+function PapyriComponent(): JSX.Element {
+  const [data, setData] = useState<Array<string>>([]);
+  const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
+    {
+      name: 'papyri',
+      location: {
+        moduleName: 'papyri',
+        version: '0.0.8',
+        kind: 'module',
+        path: 'papyri',
+      },
+    },
+    {
+      name: 'papyri:index',
+      location: {
+        moduleName: 'papyri',
+        version: '0.0.8',
+        kind: 'docs',
+        path: ':index',
+      },
+    },
+    {
+      name: 'numpy.einsum',
+      location: {
+        moduleName: 'numpy',
+        version: '1.22.3',
+        kind: 'module',
+        path: 'numpy.einsum',
+      },
+    },
+    {
+      name: 'dpss',
+      location: {
+        moduleName: 'scipy',
+        version: '*',
+        kind: 'api',
+        path: 'scipy.signal.windows._windows.dpss',
+      },
+    },
+    {
+      name: 'Numpy Dev Index',
+      location: {
+        moduleName: 'numpy',
+        version: '1.22.3',
+        kind: 'docs',
+        path: 'dev:index',
+      },
+    },
   ]);
-  const [data, setData] = useState([]);
-  const [mod, setMod] = useState('numpy');
-  const [book, setBook] = useState('-');
-  const [ver, setVer] = useState('1.22.3');
-  const [kind, setKind] = useState('module');
-  const [path, setPath] = useState('numpy.dual');
+  const [activeLocation, setActiveLocation] = useState<ILocation>({
+    moduleName: 'numpy',
+    version: '1.22.3',
+    kind: 'module',
+    path: 'numpy.dual',
+  });
+  const [history, setHistory] = useState<Array<ILocation>>([]);
+
+  function onLocationChange(loc: ILocation): void {
+    setHistory([...history, activeLocation]);
+    setActiveLocation(loc);
+    loadPage(loc);
+  }
+
+  function goBack(): void {
+    const loc = history.pop();
+    if (loc !== undefined) {
+      setActiveLocation(loc);
+      loadPage(loc);
+      setHistory(history);
+    }
+  }
+
+  function refresh(): void {
+    const loc = history.pop();
+    if (loc !== undefined) {
+      setActiveLocation(loc);
+      loadPage(loc);
+    }
+  }
+
+  async function loadPage({
+    moduleName,
+    version,
+    kind,
+    path,
+  }: ILocation): Promise<void> {
+    const endpoint = `get_example/${moduleName}/${version}/${kind}/${path}`;
+
+    try {
+      const {
+        data: {
+          arbitrary,
+          signature,
+          _content: content,
+          ordered_sections,
+          example_section_data,
+        },
+      } = await requestAPI<any>(endpoint);
+      const newData = arbitrary;
+
+      // If the response has a function signature, create a section for it
+      if (signature !== undefined) {
+        newData.push({
+          children: [
+            {
+              type: 'Paragraph',
+              data: {
+                children: [{ type: 'Words', data: { value: signature.value } }],
+              },
+            },
+          ],
+        });
+      }
+
+      // Ordered sections of a doc page should be shown first; other sections are handled after
+      ordered_sections.forEach((section: string) => {
+        if (content[section] !== undefined) {
+          newData.push({ children: content[section].children, title: section });
+          delete content[section];
+        }
+      });
+      Object.entries(content).forEach(([key, value]: [string, any]) => {
+        if (value.children.length > 0) {
+          newData.push({ children: value.children, title: key });
+        }
+      });
+      if (example_section_data.children.length !== 0) {
+        newData.push({
+          children: example_section_data.children,
+          title: 'Examples',
+        });
+      }
+      setData(newData);
+    } catch (e) {
+      console.error(`Error loading page [${endpoint}] ${e}`);
+    }
+  }
 
   const arb = data.map((x: any) => {
     try {
@@ -56,146 +183,29 @@ const PapyriComponent = (props: any): JSX.Element => {
     }
   });
 
-  const refresh = async (): Promise<void> => {
-    return await regen(mod, ver, kind, path);
-  };
-
-  const back = () => {
-    stack.pop();
-    const old: any = stack.pop();
-    setStack(stack);
-    setAll(old[0], old[1], old[2], old[3]);
-  };
-
-  const regen = async (
-    mod: string,
-    ver: string,
-    kind: string,
-    path: string
-  ): Promise<void> => {
-    const cc = stack.concat([[mod, ver, kind, path]]);
-    setStack(cc);
-    try {
-      const res = await requestAPI<any>(
-        `get_example/${mod}/${ver}/${kind}/${path}`
-      );
-      const ar2 = res.data.arbitrary;
-      if (res.data.signature !== undefined) {
-        console.log('Signature', res.data.signature);
-        const dx = {
-          children: [
-            {
-              type: 'Paragraph',
-              data: {
-                children: [
-                  { type: 'Words', data: { value: res.data.signature.value } }
-                ]
-              }
-            }
-          ]
-        };
-        ar2.push(dx);
-      }
-
-      const content = res.data._content;
-
-      console.log('OS', res.data.ordered_sections, Object.keys(content));
-      for (const key of res.data.ordered_sections) {
-        const value = content[key];
-        if (value !== undefined) {
-          ar2.push({ children: value.children, title: key });
-          delete content[key];
-        }
-      }
-
-      for (const key in content) {
-        const value = content[key];
-        if (value.children.length > 0) {
-          ar2.push({ children: value.children, title: key });
-        }
-      }
-      if (res.data.example_section_data.children.length !== 0) {
-        ar2.push({
-          children: res.data.example_section_data.children,
-          title: 'Examples'
-        });
-      }
-      setData(ar2);
-    } catch (e) {
-      console.error(`Error in reply ${e}`);
-    }
-    setCounter(counter + 1);
-  };
-
-  const setAll = (mod: string, ver: string, kind: string, path: string) => {
-    setMod(mod);
-    setVer(ver);
-    setKind(kind);
-    setPath(path);
-    regen(mod, ver, kind, path);
-  };
-
-  const _to_bookmark = (v:any) => {
-    if (v === '-'){
-        return
-    }
-    setBook(v)
-
-    console.log('Bookm', v);
-    const bookm:any={
-        'papyri':['papyri', '0.0.8', 'module', 'papyri'],
-        'papyri:index':['papyri', '0.0.8', 'docs', ':index'],
-        'numpy.einsum':['numpy', '1.22.3', 'module', 'numpy.einsum'],
-        'dpss':['scipy', '*', 'api', 'scipy.signal.windows._windows.dpss'],
-        'numpy:dev:index':['numpy', '1.22.3', 'docs', 'dev:index']
-    };
-    const target:any = bookm[v];
-    console.log('TGT', target, v);
-    setAll(target[0],target[1],target[2],target[3]);
-  };
-
   return (
-    <div className={`papyri-browser  jp-RenderedHTMLCommon ${PBStyle}`}>
-      <input value={mod} onChange={e => setMod(e.target.value)} />
-      <input value={ver} onChange={e => setVer(e.target.value)} />
-      <select value={kind} onChange={e => setKind(e.target.value)}>
-        <option value="api">API</option>
-        <option value="docs" selected>
-          {' '}
-          Narrative{' '}
-        </option>
-        <option value="gallery">Pas là</option>
-      </select>
-      <input value={path} onChange={e => setKind(e.target.value)} />
-      <button onClick={refresh}>Go</button>
-      <button onClick={back}>Back</button>
-      <br/>
-      Bookmarks:
-
-      <select value={book} onChange={e => _to_bookmark(e.target.value)}>
-        <option value="-">-</option>
-        <option value="papyri">Papyri (module)</option>
-        <option value="papyri:index">Papyri (index.rst)</option>
-        <option value="numpy.einsum">Numpy Einsum</option>
-        <option value="numpy:dev:index">Numpy Dev Index</option>
-        <option value="dpss">scipy.signal.windows.dpss</option>
-      </select>
-      <hr/>
+    <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
+      <PapyriToolbar
+        bookmarks={bookmarks}
+        setBookmarks={setBookmarks}
+        location={history[history.length - 1]}
+        onLocationChange={onLocationChange}
+        goBack={goBack}
+        refresh={refresh}
+      />
+      <hr />
       {arb.map((x: any) => (
-        <DSection setAll={setAll}>{x}</DSection>
+        <DSection setAll={setHistory}>{x}</DSection>
       ))}
     </div>
   );
-};
+}
 
 /**
- * A Counter Lumino Widget that wraps a CounterComponent.
+ * A Lumino Widget that wraps a react PapyriWidget.
  */
 export class PapyriWidget extends ReactWidget {
   data: any;
-  /**
-   * Constructs a new CounterWidget.
-   */
   constructor() {
     super();
     this.addClass('jp-ReactWidget');
@@ -207,7 +217,7 @@ export class PapyriWidget extends ReactWidget {
   }
 
   render(): JSX.Element {
-    return <PapyriComponent data={this.data} />;
+    return <PapyriComponent />;
   }
 }
 
@@ -296,7 +306,7 @@ const DFig = (props: any) => {
     fig.module,
     fig.version,
     'assets',
-    fig.path
+    fig.path,
   );
   return <img src={img_url} />;
 };
@@ -385,10 +395,11 @@ class Fig {
 class Parameters {
   children: [Param];
   constructor(props: any) {
-    this.children = props.children.map((x:any)=> new Param({...x, setAll:props.setAll}));
+    this.children = props.children.map(
+      (x: any) => new Param({ ...x, setAll: props.setAll }),
+    );
   }
 }
-
 
 const DParameters = (props: any) => {
   const p: Parameters = props.children;
@@ -398,7 +409,6 @@ const DParameters = (props: any) => {
     </React.Fragment>
   );
 };
-
 
 class Param {
   param: string;
@@ -675,7 +685,7 @@ const smap = new Map<string, any>([
   ['EnumeratedList', EnumeratedList],
   ['Code2', Code2],
   ['ExternalLink', ExternalLink],
-  ['Directive', Directive]
+  ['Directive', Directive],
 ]);
 
 const DBlockVerbatim = (props: any) => {
@@ -733,7 +743,7 @@ const dmap = new Map<string, any>([
   [Section.name, DSection],
   [Token.name, DToken],
   [Verbatim.name, DVerbatim],
-  [Words.name, DWords]
+  [Words.name, DWords],
 ]);
 
 const dynamic_render = (obj: any, setAll: any) => {
