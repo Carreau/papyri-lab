@@ -181,7 +181,7 @@ function PapyriComponent(): JSX.Element {
       console.log(`Error...|${e}|`);
       return 1;
     }
-  }); // Create array of Section
+  });
 
   return (
     <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
@@ -334,6 +334,73 @@ const DListItem = (props: any) => {
   );
 };
 
+class Leaf {
+  value: string;
+
+  constructor(data: any) {
+    this.value = data.value;
+  }
+}
+class BlockMath extends Leaf {}
+class Words extends Leaf {}
+class Math extends Leaf {}
+class BlockVerbatim extends Leaf {}
+
+class BlockDirective {
+  argument: string;
+  content: string;
+  name: string;
+  options: any;
+
+  constructor(data: any) {
+    this.argument = data.argument;
+    this.content = data.content;
+    this.name = data.name;
+    this.options = data.options;
+  }
+}
+
+class DefList {
+  children: [DefListItem];
+  constructor(data: any) {
+    this.children = data.children.map((x: any) => new DefListItem(x));
+  }
+}
+
+class Link {
+  value: string;
+  reference: any;
+  kind: string;
+  exists: boolean;
+
+  constructor(data: any) {
+    this.value = data.value;
+    this.reference = data.reference;
+    this.kind = data.kind;
+    this.exists = data.exists;
+  }
+}
+
+class Fig {
+  module: string;
+  version: string;
+  path: string;
+  constructor(data: any) {
+    this.module = data.value.module;
+    this.version = data.value.version;
+    this.path = data.value.path;
+  }
+}
+
+class Parameters {
+  children: [Param];
+  constructor(props: any) {
+    this.children = props.children.map(
+      (x: any) => new Param({ ...x, setAll: props.setAll }),
+    );
+  }
+}
+
 const DParameters = (props: any) => {
   const p: Parameters = props.children;
   return (
@@ -342,6 +409,17 @@ const DParameters = (props: any) => {
     </React.Fragment>
   );
 };
+
+class Param {
+  param: string;
+  type_: string;
+  desc: [any];
+  constructor(data: any) {
+    this.param = data.param;
+    this.type_ = data.type_;
+    this.desc = data.desc.map(deserialise);
+  }
+}
 
 const DParam = (props: any) => {
   const p: Param = props.children;
@@ -355,6 +433,13 @@ const DParam = (props: any) => {
   );
 };
 
+class Emph {
+  value: Words;
+  constructor(data: any) {
+    this.value = new Words(data.value);
+  }
+}
+
 const DEmph = (props: any) => {
   const emp: Emph = props.children;
   return (
@@ -363,6 +448,15 @@ const DEmph = (props: any) => {
     </em>
   );
 };
+
+class ExternalLink {
+  value: string;
+  target: string;
+  constructor(data: any) {
+    this.value = data.value;
+    this.target = data.target;
+  }
+}
 
 const DExternalLink = (props: any) => {
   const el: ExternalLink = props.children;
@@ -395,7 +489,22 @@ const DBlockMath = (props: any) => {
   //return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
+class Token {
+  type_: string;
+  link: Link | string;
+  disp: string;
 
+  constructor(data: any) {
+    this.type_ = data.type;
+    if (data.link.type === 'str') {
+      this.disp = 'str';
+      this.link = data.link.data;
+    } else {
+      this.disp = 'link';
+      this.link = new Link(data.link.data);
+    }
+  }
+}
 
 const DToken = (props: any) => {
   const t: Token = props.children;
@@ -421,6 +530,18 @@ const DToken = (props: any) => {
   }
 };
 
+class Code2 {
+  entries: [Token];
+  out: string;
+  ce_status: string;
+
+  constructor(data: any) {
+    this.entries = data.entries.map((x: any) => new Token(x));
+    this.out = data.out;
+    this.ce_status = data.ce_status;
+  }
+}
+
 const DCode2 = (props: any) => {
   return (
     <React.Fragment>
@@ -434,6 +555,16 @@ const DCode2 = (props: any) => {
   );
 };
 
+class Directive {
+  value: string;
+  domain: string;
+  role: string;
+  constructor(data: any) {
+    this.value = data.value;
+    this.domain = data.domain;
+    this.role = data.role;
+  }
+}
 
 const DDirective = (props: any) => {
   const d: Directive = props.children;
@@ -444,7 +575,47 @@ const DDirective = (props: any) => {
   );
 };
 
+class DefListItem {
+  dt: Paragraph;
+  dd: [any];
+  constructor(data: any) {
+    this.dt = new Paragraph(data.dt);
+    this.dd = data.dd.map(deserialise);
+  }
+}
 
+class Paragraph {
+  children: [any];
+
+  constructor(data: any) {
+    this.children = data.children.map(deserialise);
+  }
+}
+
+class Section {
+  title: string;
+  children: [any];
+
+  constructor(children: any, title: string) {
+    if (['Extended Summary', 'Summary'].includes(title)) {
+      this.title = '';
+    } else {
+      this.title = title;
+    }
+    this.children = children.map(deserialise);
+  }
+}
+
+class Admonition {
+  kind: string;
+  title: string;
+  children: [any];
+  constructor(data: any) {
+    this.title = data.title;
+    this.children = data.children.map(deserialise);
+    this.kind = data.kind;
+  }
+}
 const DAdmonition = (props: any) => {
   const adm: Admonition = props.children;
   return (
@@ -456,6 +627,41 @@ const DAdmonition = (props: any) => {
     </div>
   );
 };
+
+class Verbatim {
+  value: [string];
+  constructor(data: any) {
+    this.value = data.value;
+  }
+}
+
+class BlockQuote {
+  value: [any];
+  constructor(data: any) {
+    this.value = data.value;
+  }
+}
+
+class ListItem {
+  children: [any];
+  constructor(data: any) {
+    this.children = data.children.map(deserialise);
+  }
+}
+
+class BulletList {
+  children: [ListItem];
+  constructor(data: any) {
+    this.children = data.children.map((x: any) => new ListItem(x));
+  }
+}
+
+class EnumeratedList {
+  children: [ListItem];
+  constructor(data: any) {
+    this.children = data.children.map((x: any) => new ListItem(x));
+  }
+}
 
 const smap = new Map<string, any>([
   ['Section', Section],
