@@ -80,14 +80,13 @@ export default function PapyriToolbar({
         <HTMLSelect
           className={htmlSelectStyle}
           value={location?.kind}
+          defaultValue="docs"
           onChange={e =>
             onLocationChange({ ...location, kind: e.target.value })
           }
         >
           <option value="api">API</option>
-          <option value="docs" selected>
-            Narrative
-          </option>
+          <option value="docs">Narrative</option>
           <option value="gallery">Pas là</option>
         </HTMLSelect>
         <InputGroup
@@ -114,7 +113,9 @@ export default function PapyriToolbar({
           onChange={e => onActiveBookmarkChange(e)}
         >
           {bookmarks.map(({ name }) => (
-            <option value={name}>{name}</option>
+            <option value={name} key={name}>
+              {name}
+            </option>
           ))}
         </HTMLSelect>
       </div>
