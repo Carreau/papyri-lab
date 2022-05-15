@@ -53,7 +53,7 @@ function PapyriComponent(): JSX.Element {
         moduleName: 'papyri',
         version: '0.0.8',
         kind: 'docs',
-        path: ':index',
+        path: 'index',
       },
     },
     {
@@ -93,17 +93,23 @@ function PapyriComponent(): JSX.Element {
   const [history, setHistory] = useState<Array<ILocation>>([]);
 
   function onLocationChange(loc: ILocation): void {
-    setHistory([...history, activeLocation]);
-    setActiveLocation(loc);
-    loadPage(loc);
+    loadPage(loc).then(exists => {
+      if (exists) {
+        setHistory([...history, activeLocation]);
+        setActiveLocation(loc);
+      }
+    });
   }
 
   function goBack(): void {
     const loc = history.pop();
     if (loc !== undefined) {
-      setActiveLocation(loc);
-      loadPage(loc);
-      setHistory(history);
+      loadPage(loc).then(exists => {
+        if (exists) {
+          setActiveLocation(loc);
+          setHistory(history);
+        }
+      });
     }
   }
 
@@ -120,7 +126,7 @@ function PapyriComponent(): JSX.Element {
     version,
     kind,
     path,
-  }: ILocation): Promise<void> {
+  }: ILocation): Promise<boolean> {
     const endpoint = `get_example/${moduleName}/${version}/${kind}/${path}`;
 
     try {
@@ -168,8 +174,10 @@ function PapyriComponent(): JSX.Element {
         });
       }
       setData(newData);
+      return true;
     } catch (e) {
-      console.error(`Error loading page [${endpoint}] ${e}`);
+      console.warn(`Error loading page [${endpoint}] ${e}`);
+      return false;
     }
   }
 
@@ -229,7 +237,7 @@ const DSection = (props: any) => {
   return (
     <div>
       <h1>{px.title}</h1>
-      {px.children.map((x: any) => dynamic_render(x, props.setAll))}
+      {dynamic_render_many(px.children, props.setAll)}
     </div>
   );
 };
@@ -237,9 +245,7 @@ const DSection = (props: any) => {
 const DParagraph = (props: any) => {
   const px = props.children;
   if (px.children != undefined) {
-    return (
-      <p>{px.children.map((x: any) => dynamic_render(x, props.setAll))}</p>
-    );
+    return <p>{dynamic_render_many(px.children, props.setAll)}</p>;
   } else {
     return (
       <div>
@@ -251,16 +257,12 @@ const DParagraph = (props: any) => {
 
 const DBulletList = (props: any) => {
   const ls: BulletList = props.children;
-  return (
-    <ul>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</ul>
-  );
+  return <ul>{dynamic_render_many(ls.children, props.setAll)}</ul>;
 };
 
 const DEnumeratedList = (props: any) => {
   const ls: EnumeratedList = props.children;
-  return (
-    <ol>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</ol>
-  );
+  return <ol>{dynamic_render_many(ls.children, props.setAll)}</ol>;
 };
 
 const DDefList = (props: any) => {
@@ -268,9 +270,7 @@ const DDefList = (props: any) => {
   if (props.setAll == 0) {
     console.log('Empty setAll DefList');
   }
-  return (
-    <dl>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</dl>
-  );
+  return <dl>{dynamic_render_many(ls.children, props.setAll)}</dl>;
 };
 
 const DLink = (props: any) => {
@@ -298,7 +298,6 @@ const DLink = (props: any) => {
 const DFig = (props: any) => {
   const fig: Fig = props.children;
   const settings = ServerConnection.makeSettings();
-  console.log('SETTINGS', settings, settings.baseUrl);
   const img_url = URLExt.join(
     settings.baseUrl,
     'papyri-lab',
@@ -318,8 +317,8 @@ const DDefListItem = (props: any) => {
   }
   return (
     <React.Fragment>
-      <dt>{dynamic_render(ls.dt, props.setAll)}</dt>
-      <dd>{ls.dd.map((x: any) => dynamic_render(x, props.setAll))}</dd>
+      <dt>{dynamic_render(ls.dt, props.setAll, 'dt')}</dt>
+      <dd>{dynamic_render_many(ls.dd, props.setAll)}</dd>
     </React.Fragment>
   );
 };
@@ -329,9 +328,7 @@ const DListItem = (props: any) => {
   if (props.setAll == 0) {
     console.log('Emty setAll in Dbullet');
   }
-  return (
-    <li>{ls.children.map((x: any) => dynamic_render(x, props.setAll))}</li>
-  );
+  return <li>{dynamic_render_many(ls.children, props.setAll)}</li>;
 };
 
 class Leaf {
@@ -623,7 +620,7 @@ const DAdmonition = (props: any) => {
       <div>
         {adm.kind}:{adm.title}
       </div>
-      {adm.children.map((x: any) => dynamic_render(x, props.setAll))}
+      {dynamic_render_many(adm.children, props.setAll)}
     </div>
   );
 };
@@ -746,21 +743,25 @@ const dmap = new Map<string, any>([
   [Words.name, DWords],
 ]);
 
-const dynamic_render = (obj: any, setAll: any) => {
+const dynamic_render = (obj: any, setAll: any, key: any) => {
   const oname = obj.constructor.name;
   if (setAll === undefined) {
     console.log('Empty setAll in drander', obj.constructor.name, obj);
     throw Error('Wrong');
   }
   if (dmap.has(oname)) {
-    return React.createElement(dmap.get(oname), { setAll: setAll }, obj);
+    return React.createElement(
+      dmap.get(oname),
+      { setAll: setAll, key: key },
+      obj,
+    );
   }
   console.log('Unknown object type', obj, obj.constructor.name);
   return <div>{JSON.stringify(obj)}</div>;
 };
 
 const dynamic_render_many = (objs: any, setAll: any) => {
-  return objs.map((x: any) => dynamic_render(x, setAll));
+  return objs.map((x: any, index: number) => dynamic_render(x, setAll, index));
 };
 
 const deserialise = (item: any) => {
@@ -770,7 +771,7 @@ const deserialise = (item: any) => {
     const res = new co(item.data);
     return res;
   }
-  console.trace('Seen Unknown item during deserialisation', item, ty);
+  console.warn('Seen Unknown item during deserialisation', item, ty);
 
   return item;
 };
