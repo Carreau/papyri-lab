@@ -182,13 +182,7 @@ function PapyriComponent(): JSX.Element {
   }
 
   const arb = data.map((x: any) => {
-    try {
-      const s = new Section(x.children, x.title);
-      return s;
-    } catch (e) {
-      console.log(`Error...|${e}|`);
-      return 1;
-    }
+    return new Section(x.children, x.title);
   });
 
   return (
@@ -202,9 +196,13 @@ function PapyriComponent(): JSX.Element {
         refresh={refresh}
       />
       <hr />
-      {arb.map((x: any) => (
-        <DSection setAll={setHistory}>{x}</DSection>
-      ))}
+      {arb.map((x: any, index: number) => {
+        return (
+          <DSection key={index} setAll={setHistory}>
+            {x}
+          </DSection>
+        );
+      })}
     </div>
   );
 }
@@ -231,12 +229,12 @@ export class PapyriWidget extends ReactWidget {
 
 const DSection = (props: any) => {
   const px: Section = props.children;
-  if (props.setAll == 0) {
+  if (props.setAll === 0) {
     console.log('Empty setAll Section');
   }
   return (
     <div>
-      <h1>{px.title}</h1>
+      <h1 key={0}>{px.title}</h1>
       {dynamic_render_many(px.children, props.setAll)}
     </div>
   );
@@ -244,12 +242,13 @@ const DSection = (props: any) => {
 
 const DParagraph = (props: any) => {
   const px = props.children;
-  if (px.children != undefined) {
+  if (px.children !== undefined) {
     return <p>{dynamic_render_many(px.children, props.setAll)}</p>;
   } else {
+    console.info('strange, empty paragraph');
     return (
       <div>
-        <p>An empty paragraph</p>
+        <p key={0}>An empty paragraph</p>
       </div>
     );
   }
@@ -312,7 +311,7 @@ const DFig = (props: any) => {
 
 const DDefListItem = (props: any) => {
   const ls: DefListItem = props.children;
-  if (props.setAll == 0) {
+  if (props.setAll === 0) {
     console.log('Emty setAll in Dbullet');
   }
   return (
@@ -325,7 +324,7 @@ const DDefListItem = (props: any) => {
 
 const DListItem = (props: any) => {
   const ls: ListItem = props.children;
-  if (props.setAll == 0) {
+  if (props.setAll === 0) {
     console.log('Emty setAll in Dbullet');
   }
   return <li>{dynamic_render_many(ls.children, props.setAll)}</li>;
@@ -437,12 +436,28 @@ class Emph {
   }
 }
 
+class Strong {
+  value: Words;
+  constructor(data: any) {
+    this.value = new Words(data.content);
+  }
+}
+
 const DEmph = (props: any) => {
   const emp: Emph = props.children;
   return (
     <em>
       <DWords>{emp.value}</DWords>
     </em>
+  );
+};
+
+const DStrong = (props: any) => {
+  const str: Strong = props.children;
+  return (
+    <b>
+      <DWords>{str.value}</DWords>
+    </b>
   );
 };
 
@@ -633,9 +648,9 @@ class Verbatim {
 }
 
 class BlockQuote {
-  value: [any];
+  children: [any];
   constructor(data: any) {
-    this.value = data.value;
+    this.children = data.children;
   }
 }
 
@@ -665,6 +680,7 @@ const smap = new Map<string, any>([
   ['Paragraph', Paragraph],
   ['Words', Words],
   ['Emph', Emph],
+  ['Strong', Strong],
   ['Math', Math],
   ['Param', Param],
   ['Parameters', Parameters],
@@ -691,7 +707,7 @@ const DBlockVerbatim = (props: any) => {
 };
 const DBlockQuote = (props: any) => {
   const q: BlockQuote = props.children;
-  return <pre>{q.value.map((x: any) => x + '\n')}</pre>;
+  return <pre>{q.children.map((x: any) => x + '\n')}</pre>;
 };
 
 const DVerbatim = (props: any) => {
@@ -727,6 +743,7 @@ const dmap = new Map<string, any>([
   [DefListItem.name, DDefListItem],
   [Directive.name, DDirective],
   [Emph.name, DEmph],
+  [Strong.name, DStrong],
   [EnumeratedList.name, DEnumeratedList],
   [ExternalLink.name, DExternalLink],
   [Link.name, DLink],
