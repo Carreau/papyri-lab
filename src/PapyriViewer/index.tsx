@@ -47,8 +47,8 @@ export default function PapyriViewer({
 
 
 /**
- * A section contains a title and an array of children. Each child can be its own
- * subsection, each containing any number of subsections.
+ * A with a title and an array of children. Each child can be its own subsection, each containing
+ * any number of subsections.
  * @param title
  * @param children
  * @returns
@@ -58,9 +58,9 @@ function PapyriSection({
   children,
   onLocationChange,
 }: IPapyriSectionProps): JSX.Element {
-  console.log("title", title, children)
+  // console.log("title", title, children)
   return (
-    <div>
+    <div className="Section">
       <h1>{title || ""}</h1>
       {children?.map(item => resolveComponent(item, onLocationChange))}
     </div>
@@ -73,7 +73,7 @@ function PapyriSection({
  * @returns
  */
 function resolveComponent(
-  item: any,
+  item: ISubsection,
   onLocationChange: (loc: ILocation) => void
 ): JSX.Element | string {
   // console.log("Component: ", item)
@@ -84,7 +84,7 @@ function resolveComponent(
     ['Emph', Emph],
     ['Math', Math],
     // ['Param', Param],
-    // ['Parameters', Parameters],
+    ['Parameters', Parameters],
     // ['BlockDirective', BlockDirective],
     // ['DefList', DefList],
     ['Link', Link],
@@ -108,7 +108,7 @@ function resolveComponent(
 }
 
 function Unsupported(data: any): JSX.Element {
-  console.log("Unsupported subsection: ", {data})
+  // console.log("Unsupported subsection: ", {data})
   return (
     <div className={redBackground}>
       {JSON.stringify(data)}
@@ -121,7 +121,7 @@ function Paragraph(
   onLocationChange: (loc: ILocation) => void
 ): JSX.Element {
   if (data.children !== undefined) {
-    return <p>{data.children.map(item => resolveComponent(item, onLocationChange))}</p>
+    return <p className="Paragraph">{data.children.map(item => resolveComponent(item, onLocationChange))}</p>
   } else {
     console.error("Paragraph has no children!", {data})
     return <p />
@@ -134,7 +134,7 @@ function Words({value}: {value: string}): string {
 
 function Emph({value: {value}}: {value: {value: string}}): JSX.Element {
   return (
-    <em>{value}</em>
+    <em className="Emph">{value}</em>
   )
 }
 
@@ -154,7 +154,7 @@ function Link({
   onLocationChange: (loc: ILocation) => void
 ): JSX.Element {
   return (
-    <code className="DLINK">
+    <code className="DLINK Link">
       <a
         className="exists"
         onClick={() => onLocationChange({moduleName, version, kind, path})}
@@ -162,5 +162,51 @@ function Link({
         {value}
       </a>
     </code>
+  )
+}
+
+function Parameters(
+  data: {children?: Array<any>},
+  onLocationChange: (loc: ILocation) => void
+): JSX.Element {
+  if (data.children !== undefined) {
+    return (
+      <div className="Parameters">
+        {data.children.map(item => Parameter(item, onLocationChange))}
+      </div>
+    )
+  } else {
+    return <></>
+  }
+}
+
+/**
+ * @param param - Name of a function parameter
+ * @param type_ - Type of the function parameter
+ * @param desc - Description of the function parameter
+ * @param onLocationChange - Callback used to update the current location
+ * @returns
+ */
+function Parameter({
+  param,
+  type_,
+  desc,
+}: {
+    param: string,
+    type_: string,
+    desc: Array<any>
+},
+  onLocationChange: (loc: ILocation) => void
+): JSX.Element {
+  console.log("Parameter", {param, type_, desc})
+  return (
+    <div className="Parameter">
+      <dt>
+        {param} : {type_}
+      </dt>
+      <dd>
+        {desc.map(item => resolveComponent(item, onLocationChange))}
+      </dd>
+    </div>
   )
 }
