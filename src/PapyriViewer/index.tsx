@@ -1,302 +1,166 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { style } from 'typestyle';
 
-import { ILocation, IBookmark } from '../location';
+import { ILocation } from '../location'
 
+const redBackground = style({
+  background: 'red'
+})
 
-export default function PapyriViewer({data}): JSX.Element {
-  return (
-    data.map(item => <PapyriSection title={item?.title}>{item?.children}</PapyriSection>)
-  )
+interface IPapyriSectionProps extends ISection {
+  onLocationChange: (loc: ILocation) => void
 }
 
-function PapyriSection({
-  title,
-  children,
+export interface ISection {
+  title?: string
+  children?: Array<ISubsection>
+}
+
+interface ISubsection {
+  data: {
+    children: Array<any>
+  }
+  type: string  // type of section; Paragraph, BulletList, etc
+}
+
+export default function PapyriViewer({
+  data,
+  onLocationChange
 }: {
-  title: string,
-  children: Array<JSX.Element>
+    data: Array<ISection>,
+    onLocationChange: (loc: ILocation) => void
 }): JSX.Element {
   return (
     <div>
-      <h1>{title}</h1>
-      {getChildSections(children)}
+      {data.map((item: ISection) => {
+        return (
+          <PapyriSection
+            title={item?.title}
+            children={item?.children}
+            onLocationChange={onLocationChange}
+          />
+        )
+      })}
     </div>
   )
 }
 
-function getChildSections(children: Array<JSX.Element>): JSX.Element {
 
-  const smap = new Map<string, any>([
-    ['Section', Section],
-    ['Paragraph', Paragraph],
-    ['Words', Words],
-    ['Emph', Emph],
-    ['Math', Math],
-    ['Param', Param],
-    ['Parameters', Parameters],
-    ['BlockDirective', BlockDirective],
-    ['DefList', DefList],
-    ['Link', Link],
-    ['Fig', Fig],
-    ['Verbatim', Verbatim],
-    ['Admonition', Admonition],
-    ['BlockVerbatim', BlockVerbatim],
-    ['BlockQuote', BlockQuote],
-    ['BlockMath', BlockMath],
-    ['ListItem', ListItem],
-    ['BulletList', BulletList],
-    ['EnumeratedList', EnumeratedList],
-    ['Code2', Code2],
-    ['ExternalLink', ExternalLink],
-    ['Directive', Directive],
-  ]);
-
+/**
+ * A section contains a title and an array of children. Each child can be its own
+ * subsection, each containing any number of subsections.
+ * @param title
+ * @param children
+ * @returns
+ */
+function PapyriSection({
+  title,
+  children,
+  onLocationChange,
+}: IPapyriSectionProps): JSX.Element {
+  console.log("title", title, children)
   return (
-    <>
-      {children.map((child) => {
-        smap.has(child)
-      })}
-    </>
+    <div>
+      <h1>{title || ""}</h1>
+      {children?.map(item => resolveComponent(item, onLocationChange))}
+    </div>
   )
 }
 
-class Leaf {
-  value: string;
-
-  constructor(data: any) {
-    this.value = data.value;
-  }
-}
-class BlockMath extends Leaf {}
-class Words extends Leaf {}
-class Math extends Leaf {}
-class BlockVerbatim extends Leaf {}
-
-class DefList {
-  children: [DefListItem];
-  constructor(data: any) {
-    this.children = data.children.map((x: any) => new DefListItem(x));
-  }
-}
-
-class Link {
-  value: string;
-  reference: any;
-  kind: string;
-  exists: boolean;
-
-  constructor(data: any) {
-    this.value = data.value;
-    this.reference = data.reference;
-    this.kind = data.kind;
-    this.exists = data.exists;
-  }
-}
-
-class BlockDirective {
-  argument: string;
-  content: string;
-  name: string;
-  options: any;
-
-  constructor(data: any) {
-    this.argument = data.argument;
-    this.content = data.content;
-    this.name = data.name;
-    this.options = data.options;
-  }
-}
-
-class Fig {
-  module: string;
-  version: string;
-  path: string;
-  constructor(data: any) {
-    this.module = data.value.module;
-    this.version = data.value.version;
-    this.path = data.value.path;
-  }
-}
-
-class Parameters {
-  children: [Param];
-  constructor(props: any) {
-    this.children = props.children.map(
-      (x: any) => new Param({ ...x, setAll: props.setAll }),
-    );
-  }
-}
-
-class Param {
-  param: string;
-  type_: string;
-  desc: [any];
-  constructor(data: any) {
-    this.param = data.param;
-    this.type_ = data.type_;
-    this.desc = data.desc.map(deserialise);
-  }
-}
-
-class Emph {
-  value: Words;
-  constructor(data: any) {
-    this.value = new Words(data.value);
-  }
-}
-
-class ExternalLink {
-  value: string;
-  target: string;
-  constructor(data: any) {
-    this.value = data.value;
-    this.target = data.target;
-  }
-}
-
-class Token {
-  type_: string;
-  link: Link | string;
-  disp: string;
-
-  constructor(data: any) {
-    this.type_ = data.type;
-    if (data.link.type === 'str') {
-      this.disp = 'str';
-      this.link = data.link.data;
-    } else {
-      this.disp = 'link';
-      this.link = new Link(data.link.data);
-    }
-  }
-}
-
-class Code2 {
-  entries: [Token];
-  out: string;
-  ce_status: string;
-
-  constructor(data: any) {
-    this.entries = data.entries.map((x: any) => new Token(x));
-    this.out = data.out;
-    this.ce_status = data.ce_status;
-  }
-}
-
-class Directive {
-  value: string;
-  domain: string;
-  role: string;
-  constructor(data: any) {
-    this.value = data.value;
-    this.domain = data.domain;
-    this.role = data.role;
-  }
-}
-
-class DefListItem {
-  dt: Paragraph;
-  dd: [any];
-  constructor(data: any) {
-    this.dt = new Paragraph(data.dt);
-    this.dd = data.dd.map(deserialise);
-  }
-}
-
-class Paragraph {
-  children: [any];
-
-  constructor(data: any) {
-    this.children = data.children.map(deserialise);
-  }
-}
-
-class Section {
-  title: string;
-  children: [any];
-
-  constructor(children: any, title: string) {
-    if (['Extended Summary', 'Summary'].includes(title)) {
-      this.title = '';
-    } else {
-      this.title = title;
-    }
-    this.children = children.map(deserialise);
-  }
-}
-
-class Admonition {
-  kind: string;
-  title: string;
-  children: [any];
-  constructor(data: any) {
-    this.title = data.title;
-    this.children = data.children.map(deserialise);
-    this.kind = data.kind;
-  }
-}
-
-class Verbatim {
-  value: [string];
-  constructor(data: any) {
-    this.value = data.value;
-  }
-}
-
-class BlockQuote {
-  value: [any];
-  constructor(data: any) {
-    this.value = data.value;
-  }
-}
-
-class ListItem {
-  children: [any];
-  constructor(data: any) {
-    this.children = data.children.map(deserialise);
-  }
-}
-
-class BulletList {
-  children: [ListItem];
-  constructor(data: any) {
-    this.children = data.children.map((x: any) => new ListItem(x));
-  }
-}
-
-class EnumeratedList {
-  children: [ListItem];
-  constructor(data: any) {
-    this.children = data.children.map((x: any) => new ListItem(x));
-  }
-}
-
-function getComponent({type}): JSX.Element {
+/**
+ * Recursively resolve child sections until all nested components are resolved.
+ * @param item -
+ * @returns
+ */
+function resolveComponent(
+  item: any,
+  onLocationChange: (loc: ILocation) => void
+): JSX.Element | string {
+  // console.log("Component: ", item)
   const smap = new Map<string, any>([
-    ['Section', Section],
+    // ['Section', Section],
     ['Paragraph', Paragraph],
     ['Words', Words],
     ['Emph', Emph],
     ['Math', Math],
-    ['Param', Param],
-    ['Parameters', Parameters],
-    ['BlockDirective', BlockDirective],
-    ['DefList', DefList],
+    // ['Param', Param],
+    // ['Parameters', Parameters],
+    // ['BlockDirective', BlockDirective],
+    // ['DefList', DefList],
     ['Link', Link],
-    ['Fig', Fig],
-    ['Verbatim', Verbatim],
-    ['Admonition', Admonition],
-    ['BlockVerbatim', BlockVerbatim],
-    ['BlockQuote', BlockQuote],
-    ['BlockMath', BlockMath],
-    ['ListItem', ListItem],
-    ['BulletList', BulletList],
-    ['EnumeratedList', EnumeratedList],
-    ['Code2', Code2],
-    ['ExternalLink', ExternalLink],
-    ['Directive', Directive],
+    // ['Fig', Fig],
+    // ['Verbatim', Verbatim],
+    // ['Admonition', Admonition],
+    // ['BlockVerbatim', BlockVerbatim],
+    // ['BlockQuote', BlockQuote],
+    // ['BlockMath', BlockMath],
+    // ['ListItem', ListItem],
+    // ['BulletList', BulletList],
+    // ['EnumeratedList', EnumeratedList],
+    // ['Code2', Code2],
+    // ['ExternalLink', ExternalLink],
+    // ['Directive', Directive],
   ]);
 
-  if ()
+  const element = item.type !== undefined && smap.has(item.type) ? smap.get(item.type) : Unsupported
+  return element(item.data, onLocationChange)
+
+}
+
+function Unsupported(data: any): JSX.Element {
+  console.log("Unsupported subsection: ", {data})
+  return (
+    <div className={redBackground}>
+      {JSON.stringify(data)}
+    </div>
+  )
+}
+
+function Paragraph(
+  data: {children?: Array<any>},
+  onLocationChange: (loc: ILocation) => void
+): JSX.Element {
+  if (data.children !== undefined) {
+    return <p>{data.children.map(item => resolveComponent(item, onLocationChange))}</p>
+  } else {
+    console.error("Paragraph has no children!", {data})
+    return <p />
+  }
+}
+
+function Words({value}: {value: string}): string {
+  return value
+}
+
+function Emph({value: {value}}: {value: {value: string}}): JSX.Element {
+  return (
+    <em>{value}</em>
+  )
+}
+
+function Link({
+  value,
+  reference: {module: moduleName, version, kind, path},
+}: {
+  value: string,
+  reference: {
+    module: string,
+    version: string,
+    kind: string,
+    path: string,
+  },
+  kind: string,
+},
+  onLocationChange: (loc: ILocation) => void
+): JSX.Element {
+  return (
+    <code className="DLINK">
+      <a
+        className="exists"
+        onClick={() => onLocationChange({moduleName, version, kind, path})}
+      >
+        {value}
+      </a>
+    </code>
+  )
 }

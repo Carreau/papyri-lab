@@ -8,6 +8,7 @@ import { URLExt } from '@jupyterlab/coreutils';
 import { Provider, Node } from '@nteract/mathjax';
 
 import PapyriToolbar from './PapyriToolbar';
+import PapyriViewer, { ISection } from './PapyriViewer';
 import { ILocation, IBookmark } from './location';
 
 const PBStyle = style({
@@ -36,7 +37,7 @@ const AdmStyle = style({
  * @returns Main Papyri component; contains documentation and navigation widgets
  */
 function PapyriComponent(): JSX.Element {
-  const [data, setData] = useState<Array<string>>([]);
+  const [data, setData] = useState<Array<ISection>>([]);
   const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
     {
       name: 'papyri',
@@ -138,14 +139,12 @@ function PapyriComponent(): JSX.Element {
       // If the response has a function signature, create a section for it
       if (signature !== undefined) {
         newData.push({
-          children: [
-            {
-              type: 'Paragraph',
-              data: {
-                children: [{ type: 'Words', data: { value: signature.value } }],
-              },
-            },
-          ],
+          children: [{
+            type: 'Paragraph',
+            data: {
+              children: [{ type: 'Words', data: { value: signature.value } }],
+            }
+          }],
         });
       }
 
@@ -173,16 +172,6 @@ function PapyriComponent(): JSX.Element {
     }
   }
 
-  const arb = data.map((x: any) => {
-    try {
-      const s = new Section(x.children, x.title);
-      return s;
-    } catch (e) {
-      console.log(`Error...|${e}|`);
-      return 1;
-    }
-  });
-
   return (
     <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
       <PapyriToolbar
@@ -194,9 +183,7 @@ function PapyriComponent(): JSX.Element {
         refresh={refresh}
       />
       <hr />
-      {arb.map((x: any) => (
-        <DSection setAll={setHistory}>{x}</DSection>
-      ))}
+      <PapyriViewer data={data} onLocationChange={onLocationChange}/>
     </div>
   );
 }
