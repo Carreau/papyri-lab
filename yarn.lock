@@ -554,6 +554,24 @@
     "@lumino/widgets" "^1.30.0"
     react "^17.0.1"
 
+"@jupyterlab/inspector@^3.3.3":
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/inspector/-/inspector-3.4.2.tgz#b34324b9128dd2ccbc2063222a4938d19095f7e1"
+  integrity sha512-g7RyvHBJCHcKjCTfztT0ydMRgw5I6JMN3YU5zHL2bijuSeBOAyHmjSRfSGroQkQTo80lSui0wjis5bbIhn93QQ==
+  dependencies:
+    "@jupyterlab/apputils" "^3.4.2"
+    "@jupyterlab/codeeditor" "^3.4.2"
+    "@jupyterlab/coreutils" "^5.4.2"
+    "@jupyterlab/rendermime" "^3.4.2"
+    "@jupyterlab/services" "^6.4.2"
+    "@jupyterlab/statedb" "^3.4.2"
+    "@jupyterlab/translation" "^3.4.2"
+    "@lumino/coreutils" "^1.11.0"
+    "@lumino/disposable" "^1.10.0"
+    "@lumino/polling" "^1.9.0"
+    "@lumino/signaling" "^1.10.0"
+    "@lumino/widgets" "^1.30.0"
+
 "@jupyterlab/nbformat@^3.4.0":
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/@jupyterlab/nbformat/-/nbformat-3.4.0.tgz#cfcc3981ba9ad7826a6eec536d32aa375e67a792"

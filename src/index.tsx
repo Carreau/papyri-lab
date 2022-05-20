@@ -6,8 +6,15 @@ import {
 } from '@jupyterlab/application';
 import { PapyriWidget } from './widget';
 
+import {
+  IInspector,
+  KernelConnector
+} from '@jupyterlab/inspector'
+
 import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import { PapyriInspectionHandler } from './handler'
 
 import {
   ICommandPalette,
@@ -32,7 +39,7 @@ const display: JupyterFrontEndPlugin<void> = {
 
     if (settingRegistry) {
       try {
-        const settings = (await settingRegistry.load(plugin.id)).composite;
+        const settings = (await settingRegistry.load(display.id)).composite;
         console.log('papyri-lab settings loaded:', settings.composite);
       } catch (reason) {
         console.error('Failed to load settings for papyri-lab.', reason);
@@ -81,20 +88,22 @@ const display: JupyterFrontEndPlugin<void> = {
 const notebooks: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:notebooks',
   autoStart: true,
-  requires: [INotebookTracker, ILabShell],
+  requires: [IInspector, INotebookTracker, ILabShell],
   activate: (
     app: JupyterFrontEnd,
+    manager: IInspector,
     notebooks: INotebookTracker,
     labShell: ILabShell,
   ): void => {
+    // Each notebook has a corresponding handler; these are kept here.
+    const handlers: { [id: string]: PapyriInspectionHandler } = {}
 
-    const handlers: { [id: string]: PapyriHandler }
-
+    // Each time a notebook is created, a new handler is assigned to it.
     notebooks.widgetAdded.connect((sender, parent) => {
       const sessionContext = parent.sessionContext;
       const rendermime = parent.content.rendermime;
       const connector = new KernelConnector({ sessionContext });
-      const handler = new PapyriHandler({ connector, rendermime });
+      const handler = new PapyriInspectionHandler({ connector, rendermime });
 
       // Associate the handler to the widget.
       handlers[parent.id] = handler;

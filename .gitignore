@@ -71,3 +71,5 @@ node_modules/
 *.egg-info/
 __pycache__/
 tsconfig.tsbuildinfo
+*.ipynb
+.ipynb_checkpoints/
