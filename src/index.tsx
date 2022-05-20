@@ -99,7 +99,7 @@ const notebooks: JupyterFrontEndPlugin<void> = {
     const handlers: { [id: string]: PapyriInspectionHandler } = {}
 
     // Each time a notebook is created, a new handler is assigned to it.
-    notebooks.widgetAdded.connect((sender, parent) => {
+    notebooks.widgetAdded.connect((sender: any, parent: any) => {
       const sessionContext = parent.sessionContext;
       const rendermime = parent.content.rendermime;
       const connector = new KernelConnector({ sessionContext });
@@ -113,7 +113,7 @@ const notebooks: JupyterFrontEndPlugin<void> = {
       handler.editor = cell && cell.editor;
 
       // Listen for active cell changes.
-      parent.content.activeCellChanged.connect((sender, cell) => {
+      parent.content.activeCellChanged.connect((sender: any, cell: any) => {
         handler.editor = cell && cell.editor;
       });
 
