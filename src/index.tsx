@@ -1,10 +1,12 @@
 import {
+  ILabShell,
   ILayoutRestorer,
   JupyterFrontEnd,
   JupyterFrontEndPlugin,
 } from '@jupyterlab/application';
 import { PapyriWidget } from './widget';
 
+import { INotebookTracker } from '@jupyterlab/notebook';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import {
@@ -16,7 +18,7 @@ import {
 /**
  * Initialization data for the papyri-lab extension.
  */
-const plugin: JupyterFrontEndPlugin<void> = {
+const display: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
@@ -76,4 +78,57 @@ const plugin: JupyterFrontEndPlugin<void> = {
   },
 };
 
-export default plugin;
+const notebooks: JupyterFrontEndPlugin<void> = {
+  id: 'papyri-lab:notebooks',
+  autoStart: true,
+  requires: [INotebookTracker, ILabShell],
+  activate: (
+    app: JupyterFrontEnd,
+    notebooks: INotebookTracker,
+    labShell: ILabShell,
+  ): void => {
+
+    const handlers: { [id: string]: PapyriHandler }
+
+    notebooks.widgetAdded.connect((sender, parent) => {
+      const sessionContext = parent.sessionContext;
+      const rendermime = parent.content.rendermime;
+      const connector = new KernelConnector({ sessionContext });
+      const handler = new PapyriHandler({ connector, rendermime });
+
+      // Associate the handler to the widget.
+      handlers[parent.id] = handler;
+
+      // Set the initial editor.
+      const cell = parent.content.activeCell;
+      handler.editor = cell && cell.editor;
+
+      // Listen for active cell changes.
+      parent.content.activeCellChanged.connect((sender, cell) => {
+        handler.editor = cell && cell.editor;
+      });
+
+      // Listen for parent disposal.
+      parent.disposed.connect(() => {
+        delete handlers[parent.id];
+        handler.dispose();
+      });
+    });
+
+    // Keep track of notebook instances and set inspector source.
+    labShell.currentChanged.connect((sender, args) => {
+      const widget = args.newValue;
+      if (!widget || !notebooks.has(widget)) {
+        return;
+      }
+      const source = handlers[widget.id];
+      if (source) {
+        manager.source = source;
+      }
+    });
+  }
+}
+
+const plugins = [display, notebooks]
+
+export default plugins;
