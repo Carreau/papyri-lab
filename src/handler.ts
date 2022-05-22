@@ -119,6 +119,7 @@ export class PapyriInspectionHandler implements IDisposable, IInspector.IInspect
 
   // Handle a text changed signal from an editor
   onEditorChange(customText?: string): void {
+    debugger
     if (this._standby) {
       return;
     }
@@ -128,6 +129,7 @@ export class PapyriInspectionHandler implements IDisposable, IInspector.IInspect
     if (!editor) {
       return;
     }
+
     const text = customText ? customText : editor.model.value.text;
     const position = editor.getCursorPosition();
     const offset = Text.jsIndexToCharIndex(editor.getOffsetAt(position), text);

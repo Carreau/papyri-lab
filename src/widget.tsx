@@ -6,6 +6,7 @@ import { requestAPI } from './handler';
 import { ServerConnection } from '@jupyterlab/services';
 import { URLExt } from '@jupyterlab/coreutils';
 import { Provider, Node } from '@nteract/mathjax';
+import { IInspector } from '@jupyterlab/inspector'
 
 import PapyriToolbar from './PapyriToolbar';
 import { ILocation, IBookmark } from './location';
@@ -35,7 +36,12 @@ const AdmStyle = style({
 /**
  * @returns Main Papyri component; contains documentation and navigation widgets
  */
-function PapyriComponent(): JSX.Element {
+export function PapyriComponent({
+  source
+}: {
+  source: IInspector.IInspectable | null
+}): JSX.Element {
+  console.log({source})
   const [data, setData] = useState<Array<string>>([]);
   const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
     {
@@ -215,16 +221,45 @@ export class PapyriWidget extends ReactWidget {
   constructor() {
     super();
     this.addClass('jp-ReactWidget');
-    this.data = {};
   }
 
-  setDX(data: any) {
-    this.data = data;
+  get source(): IInspector.IInspectable | null {
+    return this._source;
   }
+  set source(source: IInspector.IInspectable | null) {
+    if (this._source === source) {
+      return;
+    }
+
+    // Disconnect old signal handler.
+    if (this._source) {
+      this._source.standby = true;
+      this._source.inspected.disconnect(this.onInspectorUpdate, this);
+      this._source.disposed.disconnect(this.onSourceDisposed, this);
+    }
+
+    // Reject a source that is already disposed.
+    if (source && source.isDisposed) {
+      source = null;
+    }
+
+    // Update source.
+    this._source = source;
+
+    // Connect new signal handler.
+    if (this._source) {
+      this._source.standby = false;
+      this._source.inspected.connect(this.onInspectorUpdate, this);
+      this._source.disposed.connect(this.onSourceDisposed, this);
+    }
+  }
+
 
   render(): JSX.Element {
-    return <PapyriComponent />;
+    return <PapyriComponent source={this._source}/>;
   }
+
+  private _source: IInspector.IInspectable | null = null
 }
 
 const DSection = (props: any) => {

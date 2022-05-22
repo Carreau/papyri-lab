@@ -22,66 +22,136 @@ import {
   WidgetTracker,
 } from '@jupyterlab/apputils';
 
+import { Token } from '@lumino/coreutils';
+
+
+export interface IPapyriInspector extends IInspector {}
+/**
+ * The papyri inspector window token.
+ */
+export const IPapyriInspector = new Token<IPapyriInspector>(
+  'papyri-lab/inspector:IPapyriInspector'
+);
+
+
+namespace CommandIDs {
+  export const open = 'papyri:open'
+  export const close = 'papyri:close'
+  export const toggle = 'papyri:toggle'
+}
+
 /**
  * Initialization data for the papyri-lab extension.
  */
-const display: JupyterFrontEndPlugin<void> = {
+const papyri: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
+  provides: IPapyriInspector,
   activate: async (
     app: JupyterFrontEnd,
-    palette: ICommandPalette,
+    palette: ICommandPalette | null,
     settingRegistry: ISettingRegistry,
-    restorer: ILayoutRestorer,
+    restorer: ILayoutRestorer | null,
   ) => {
-    console.log('JupyterLab extension papyri-lab is activated!');
-
     if (settingRegistry) {
       try {
-        const settings = (await settingRegistry.load(display.id)).composite;
+        const settings = (await settingRegistry.load(papyri.id)).composite;
         console.log('papyri-lab settings loaded:', settings.composite);
       } catch (reason) {
         console.error('Failed to load settings for papyri-lab.', reason);
       }
     }
 
-    let widget: MainAreaWidget<PapyriWidget>;
-
-    const command = 'papyri:open';
-    app.commands.addCommand(command, {
-      label: 'Open papyri browser',
-      execute: () => {
-        if (!widget) {
-          const content = new PapyriWidget();
-          widget = new MainAreaWidget<PapyriWidget>({ content });
-          widget.id = 'papyri-browser';
-          widget.title.label = 'Papyri browser';
-          widget.title.closable = true;
-        }
-        if (!tracker.has(widget)) {
-          // Track the state of the widget for later restoration
-          tracker.add(widget);
-        }
-        if (!widget.isAttached) {
-          // Attach the widget to the main work area if it's not there
-          app.shell.add(widget, 'main');
-        }
-        // Activate the widget
-        app.shell.activateById(widget.id);
-      },
-    });
-    // Add the command to the palette.
-
-    palette.addItem({ command, category: 'Papyri' });
     // Track and restore the widget state
     const tracker = new WidgetTracker<MainAreaWidget<PapyriWidget>>({
       namespace: 'papyri',
     });
-    restorer.restore(tracker, {
-      command,
-      name: () => 'papyri',
+
+    function isPapyriOpen() {
+      return widget && !widget.isDisposed;
+    }
+
+    let source: IInspector.IInspectable | null = null;
+    let widget: MainAreaWidget<PapyriWidget>;
+    const datasetKey = 'papyriInspector'
+
+    function openPapyri(args: string): MainAreaWidget<PapyriWidget> {
+      if (!isPapyriOpen()) {
+        widget = new MainAreaWidget({
+          content: new PapyriWidget()
+        })
+        widget.id = 'papyri-browser'
+        widget.title.label = 'Papyri browser'
+        widget.title.closable = true
+        void tracker.add(widget)
+        source = source && !source.isDisposed ? source : null
+        widget.content.source = source
+        widget.content.source?.onEditorChange(args)
+      }
+      if (!widget.isAttached) {
+        app.shell.add(widget, 'main', {
+          activate: false,
+          mode: 'split-right',
+        })
+      }
+      app.shell.activateById(widget.id)
+      document.body.dataset[datasetKey] = 'open';
+      return widget
+    }
+
+    function closePapyri(): void {
+      widget.dispose()
+      delete document.body.dataset[datasetKey]
+    }
+
+    // Add papyri:open to the command registry
+    app.commands.addCommand(CommandIDs.open, {
+      label: 'Open papyri browser',
+      isEnabled: () => !widget || widget.isDisposed || !widget.isAttached || !widget.isVisible,
+      execute: args => {
+        const text = args && (args.text as string);
+        const refresh = args && (args.refresh as boolean);
+        if (isPapyriOpen() && refresh) {
+          widget.content.source?.onEditorChange(text)
+        } else {
+          openPapyri(text)
+        }
+      },
     });
+
+    // Add papyri:close to the command registry
+    app.commands.addCommand(CommandIDs.close, {
+      label: 'Close papyri browser',
+      isEnabled: () => isPapyriOpen(),
+      execute: () => closePapyri(),
+    })
+
+    // Add papyri:toggle to the command registry
+    app.commands.addCommand(CommandIDs.toggle, {
+      isToggled: () => isPapyriOpen(),
+      execute: args => {
+        if (isPapyriOpen()) {
+          closePapyri()
+        } else {
+          const text = args && (args.text as string);
+          openPapyri(text)
+        }
+      }
+    })
+
+    // Add the open command to the palette, if the palette is available.
+    if (palette) {
+      palette.addItem({ command: CommandIDs.toggle, category: 'Papyri' });
+    }
+
+    // Add the c
+    if (restorer) {
+      void restorer.restore(tracker, {
+        command: CommandIDs.toggle,
+        name: () => 'papyri',
+      });
+    }
   },
 };
 
@@ -138,6 +208,6 @@ const notebooks: JupyterFrontEndPlugin<void> = {
   }
 }
 
-const plugins = [display, notebooks]
+const plugins = [papyri, notebooks]
 
 export default plugins;
