@@ -8,6 +8,11 @@ import { PapyriPanel } from './widget';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import {
+  INotebookTracker,
+  NotebookPanel
+} from '@jupyterlab/notebook'
+
+import {
   ICommandPalette,
   MainAreaWidget,
   WidgetTracker,
@@ -26,9 +31,11 @@ namespace CommandIDs {
 const papyri: JupyterFrontEndPlugin<void> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
+  requires: [INotebookTracker],
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
   activate: async (
     app: JupyterFrontEnd,
+    notebookTracker: INotebookTracker,
     palette: ICommandPalette | null,
     settingRegistry: ISettingRegistry,
     restorer: ILayoutRestorer | null,
@@ -54,15 +61,24 @@ const papyri: JupyterFrontEndPlugin<void> = {
     let widget: MainAreaWidget<PapyriPanel>;
     const datasetKey = 'papyriInspector'
 
-    function openPapyri(): MainAreaWidget<PapyriPanel> {
-      if (!isPapyriOpen()) {
+    function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
+      let notebook: NotebookPanel | null;
+      if (args.path) {
+        notebook = notebookTracker.find(nb => nb.context.path === args.path) ?? null
+      } else {
+        notebook = notebookTracker.currentWidget
+      }
+
+      if (!isPapyriOpen() && notebook) {
         widget = new MainAreaWidget({
-          content: new PapyriPanel()
+          content: new PapyriPanel(notebook.context.sessionContext?.session?.kernel)
         })
-        widget.id = 'papyri-browser'
-        widget.title.label = 'Papyri browser'
-        widget.title.closable = true
         void tracker.add(widget)
+
+        notebook.context.sessionContext.kernelChanged.connect((_, args) => {
+          widget.content.model.kernel = args.newValue
+        })
+
       }
       if (!widget.isAttached) {
         app.shell.add(widget, 'main', {
@@ -84,12 +100,7 @@ const papyri: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.open, {
       label: 'Open papyri browser',
       isEnabled: () => !widget || widget.isDisposed || !widget.isAttached || !widget.isVisible,
-      execute: args => {
-        const refresh = args && (args.refresh as boolean);
-        if (!isPapyriOpen() || refresh) {
-          openPapyri()
-        }
-      },
+      execute: args => openPapyri(args),
     });
 
     // Add papyri:close to the command registry
@@ -103,11 +114,11 @@ const papyri: JupyterFrontEndPlugin<void> = {
     app.commands.addCommand(CommandIDs.toggle, {
       label: 'Toggle papyri browser',
       isToggled: () => isPapyriOpen(),
-      execute: () => {
+      execute: args => {
         if (isPapyriOpen()) {
           closePapyri()
         } else {
-          openPapyri()
+          openPapyri(args)
         }
       }
     })
