@@ -1,3 +1,4 @@
+import { Signal, ISignal } from '@lumino/signaling'
 import {
   INotebookTracker,
   NotebookPanel
@@ -26,10 +27,20 @@ export class KernelSpyModel extends VDomModel {
     path?: string,
   ) {
     super();
-    if (path) {
-      this._notebook = notebookTracker.find(nb => nb.context.path === path) ?? null
+    this._notebookTracker = notebookTracker
+    this._notebookTracker.currentChanged.connect(this.onNotebookChanged, this)
+    this.onNotebookChanged(undefined, {path})
+  }
+
+  onNotebookChanged(
+    sender: any,
+    args: any
+  ) {
+  // onNotebookChanged(notebookTracker: INotebookTracker, path?: string) {
+    if (args.path) {
+      this._notebook = this._notebookTracker.find(nb => nb.context.path === args.path) ?? null
     } else {
-      this._notebook = notebookTracker.currentWidget
+      this._notebook = this._notebookTracker.currentWidget
     }
 
     if (this._notebook) {
@@ -108,11 +119,14 @@ export class KernelSpyModel extends VDomModel {
     return thread;
   }
 
+  get questionMarkSubmitted(): ISignal<KernelSpyModel, string> {
+    return this._questionMarkSubmitted
+  }
+
   protected onMessage(
     sender: Kernel.IKernelConnection,
     args: Kernel.IAnyMessageArgs
   ) {
-    console.log(`kernel message: ${args}`)
     const { msg } = args;
     this._log.push(args);
     this._messages[msg.header.msg_id] = args;
@@ -125,6 +139,9 @@ export class KernelSpyModel extends VDomModel {
       this._childLUT[header.msg_id].push(msg.header.msg_id);
     }
     this.stateChanged.emit(undefined);
+
+    // Log the kernel message here.
+    console.log({args})
   }
 
   private _findParent(
@@ -141,6 +158,7 @@ export class KernelSpyModel extends VDomModel {
   private _messages: { [key: string]: Kernel.IAnyMessageArgs } = {};
   private _childLUT: { [key: string]: string[] } = {};
   private _roots: string[] = [];
-  private _notebook: NotebookPanel | null;
+  private _notebook: NotebookPanel | null = null;
   private _notebookTracker: INotebookTracker
+  private _questionMarkSubmitted = new Signal<KernelSpyModel, string>(this)
 }

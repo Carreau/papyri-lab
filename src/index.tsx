@@ -9,7 +9,6 @@ import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
 import {
   INotebookTracker,
-  NotebookPanel
 } from '@jupyterlab/notebook'
 
 import { Token } from '@lumino/coreutils';
@@ -39,7 +38,6 @@ export interface IPapyriExtension {
 
 class PapyriExtension implements IPapyriExtension {
   constructor(notebookTracker: INotebookTracker) {
-    console.log("Generating kernespy with notebooktracker", {notebookTracker})
     this.kernelSpy = new KernelSpyModel(notebookTracker)
   }
 
@@ -85,14 +83,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
-      let notebook: NotebookPanel | null;
-      if (args.path) {
-        notebook = notebookTracker.find(nb => nb.context.path === args.path) ?? null
-      } else {
-        notebook = notebookTracker.currentWidget
-      }
-
-      if (!isPapyriOpen() && notebook) {
+      if (!isPapyriOpen()) {
         widget = new MainAreaWidget({
           content: new PapyriPanel()
         })
@@ -152,6 +143,10 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
         name: () => 'papyri',
       });
     }
+
+    extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
+      openPapyri(args)
+    })
 
     return extension
   },
