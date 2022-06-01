@@ -7,9 +7,6 @@ import { ServerConnection } from '@jupyterlab/services';
 import { URLExt } from '@jupyterlab/coreutils';
 import { Provider, Node } from '@nteract/mathjax';
 
-import { Kernel } from '@jupyterlab/services';
-import { KernelSpyModel } from './kernelspy';
-
 import PapyriToolbar from './PapyriToolbar';
 import { ILocation, IBookmark } from './location';
 
@@ -215,9 +212,8 @@ export function PapyriComponent(): JSX.Element {
  */
 export class PapyriPanel extends ReactWidget {
   data: any;
-  constructor(kernel?: Kernel.IKernelConnection | null) {
+  constructor() {
     super();
-    this._model = new KernelSpyModel(kernel)
     this.addClass('jp-ReactWidget');
     this.id = 'papyri-browser'
     this.title.label = 'Papyri browser'
@@ -227,12 +223,6 @@ export class PapyriPanel extends ReactWidget {
   render(): JSX.Element {
     return <PapyriComponent />;
   }
-
-  get model(): KernelSpyModel {
-    return this._model
-  }
-
-  private _model: KernelSpyModel
 }
 
 const DSection = (props: any) => {

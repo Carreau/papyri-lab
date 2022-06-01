@@ -1,4 +1,7 @@
-// import { IIterator } from '@lumino/algorithm';
+import {
+  INotebookTracker,
+  NotebookPanel
+} from '@jupyterlab/notebook'
 import { VDomModel } from '@jupyterlab/apputils';
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
@@ -13,72 +16,30 @@ function isHeader(
   return candidate.msg_id !== undefined;
 }
 
-// export class ThreadIterator implements IIterator<ThreadIterator.IElement> {
-//   constructor(threads: MessageThread[], collapsed: { [key: string]: boolean }) {
-//     this._threads = threads;
-//     this._collapsed = collapsed;
-//     this._index = -1;
-//     this._child = null;
-//   }
-
-//   iter() {
-//     return this;
-//   }
-
-//   next(): ThreadIterator.IElement | undefined {
-//     if (this._child) {
-//       const next = this._child.next();
-//       if (next !== undefined) {
-//         return next;
-//       }
-//       this._child = null;
-//     }
-//     // Move to next thread
-//     ++this._index;
-//     if (this._index >= this._threads.length) {
-//       return undefined;
-//     }
-//     const entry = this._threads[this._index];
-//     if (
-//       entry.children.length > 0 &&
-//       !this._collapsed[entry.args.msg.header.msg_id]
-//     ) {
-//       // Iterate over children after this
-//       this._child = new ThreadIterator(entry.children, this._collapsed);
-//     }
-//     return { args: entry.args, hasChildren: entry.children.length > 0 };
-//   }
-
-//   clone(): ThreadIterator {
-//     const r = new ThreadIterator(this._threads, this._collapsed);
-//     r._index = this._index;
-//     if (this._child) {
-//       r._child = this._child.clone();
-//     }
-//     return r;
-//   }
-
-//   private _index: number;
-//   private _child: ThreadIterator | null;
-
-//   private _threads: MessageThread[];
-//   private _collapsed: { [key: string]: boolean };
-// }
-
-// export namespace ThreadIterator {
-//   export interface IElement {
-//     args: Kernel.IAnyMessageArgs;
-//     hasChildren: boolean;
-//   }
-// }
-
 /**
  * Model for a kernel spy.
  */
 export class KernelSpyModel extends VDomModel {
-  constructor(kernel?: Kernel.IKernelConnection | null) {
+  // constructor(kernel?: Kernel.IKernelConnection | null) {
+  constructor(
+    notebookTracker: INotebookTracker,
+    path?: string,
+  ) {
     super();
-    this.kernel = kernel ?? null;
+    if (path) {
+      this._notebook = notebookTracker.find(nb => nb.context.path === path) ?? null
+    } else {
+      this._notebook = notebookTracker.currentWidget
+    }
+
+    if (this._notebook) {
+      this.kernel = this._notebook.context.sessionContext?.session?.kernel ?? null
+      this._notebook.context.sessionContext.kernelChanged.connect((_, args) => {
+        this.kernel = args.newValue
+      })
+    } else {
+      this.kernel = null
+    }
   }
 
   clear() {
@@ -176,10 +137,10 @@ export class KernelSpyModel extends VDomModel {
   }
 
   private _log: Kernel.IAnyMessageArgs[] = [];
-
   private _kernel: Kernel.IKernelConnection | null = null;
-
   private _messages: { [key: string]: Kernel.IAnyMessageArgs } = {};
   private _childLUT: { [key: string]: string[] } = {};
   private _roots: string[] = [];
+  private _notebook: NotebookPanel | null;
+  private _notebookTracker: INotebookTracker
 }

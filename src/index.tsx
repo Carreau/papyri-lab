@@ -12,11 +12,15 @@ import {
   NotebookPanel
 } from '@jupyterlab/notebook'
 
+import { Token } from '@lumino/coreutils';
+
 import {
   ICommandPalette,
   MainAreaWidget,
   WidgetTracker,
 } from '@jupyterlab/apputils';
+
+import { KernelSpyModel } from './kernelspy';
 
 
 namespace CommandIDs {
@@ -25,29 +29,51 @@ namespace CommandIDs {
   export const toggle = 'papyri:toggle'
 }
 
+const IPapyriExtension = new Token<IPapyriExtension>(
+  'papyri-lab'
+)
+
+export interface IPapyriExtension {
+  kernelSpy: KernelSpyModel
+}
+
+class PapyriExtension implements IPapyriExtension {
+  constructor(notebookTracker: INotebookTracker) {
+    console.log("Generating kernespy with notebooktracker", {notebookTracker})
+    this.kernelSpy = new KernelSpyModel(notebookTracker)
+  }
+
+  kernelSpy: KernelSpyModel
+}
+
 /**
  * Initialization data for the papyri-lab extension.
  */
-const papyri: JupyterFrontEndPlugin<void> = {
+const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
   requires: [INotebookTracker],
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
+  provides: IPapyriExtension,
   activate: async (
     app: JupyterFrontEnd,
     notebookTracker: INotebookTracker,
     palette: ICommandPalette | null,
     settingRegistry: ISettingRegistry,
     restorer: ILayoutRestorer | null,
-  ) => {
+  ): Promise<IPapyriExtension> => {
     if (settingRegistry) {
       try {
-        const settings = (await settingRegistry.load(papyri.id)).composite;
+        const settings = (await settingRegistry.load(plugin.id)).composite;
         console.log('papyri-lab settings loaded:', settings.composite);
       } catch (reason) {
         console.error('Failed to load settings for papyri-lab.', reason);
       }
     }
+
+    let widget: MainAreaWidget<PapyriPanel>;
+    const datasetKey = 'papyriInspector'
+    const extension = new PapyriExtension(notebookTracker)
 
     // Track and restore the widget state
     const tracker = new WidgetTracker<MainAreaWidget<PapyriPanel>>({
@@ -57,9 +83,6 @@ const papyri: JupyterFrontEndPlugin<void> = {
     function isPapyriOpen() {
       return widget && !widget.isDisposed;
     }
-
-    let widget: MainAreaWidget<PapyriPanel>;
-    const datasetKey = 'papyriInspector'
 
     function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
       let notebook: NotebookPanel | null;
@@ -71,14 +94,9 @@ const papyri: JupyterFrontEndPlugin<void> = {
 
       if (!isPapyriOpen() && notebook) {
         widget = new MainAreaWidget({
-          content: new PapyriPanel(notebook.context.sessionContext?.session?.kernel)
+          content: new PapyriPanel()
         })
         void tracker.add(widget)
-
-        notebook.context.sessionContext.kernelChanged.connect((_, args) => {
-          widget.content.model.kernel = args.newValue
-        })
-
       }
       if (!widget.isAttached) {
         app.shell.add(widget, 'main', {
@@ -134,9 +152,9 @@ const papyri: JupyterFrontEndPlugin<void> = {
         name: () => 'papyri',
       });
     }
+
+    return extension
   },
 };
 
-const plugins = [papyri]
-
-export default plugins;
+export default plugin;
