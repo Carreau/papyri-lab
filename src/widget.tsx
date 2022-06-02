@@ -93,6 +93,7 @@ function PapyriComponent(): JSX.Element {
   const [history, setHistory] = useState<Array<ILocation>>([]);
 
   function onLocationChange(loc: ILocation): void {
+    console.log('OnLocationChange', loc);
     loadPage(loc).then(exists => {
       if (exists) {
         setHistory([...history, activeLocation]);
@@ -198,7 +199,7 @@ function PapyriComponent(): JSX.Element {
       <hr />
       {arb.map((x: any, index: number) => {
         return (
-          <DSection key={index} setAll={setHistory}>
+          <DSection key={index} setAll={loadPage}>
             {x}
           </DSection>
         );
@@ -282,10 +283,20 @@ const DLink = (props: any) => {
         className="exists"
         onClick={e => {
           const r = lk.reference;
+          console.log('link clicked');
           e.preventDefault();
+          console.log('link clicked II');
           e.stopPropagation();
+          console.log('link clicked III');
           e.nativeEvent.stopImmediatePropagation();
-          props.setAll(r.module, r.version, r.kind, r.path);
+          console.log('link clicked IV', r);
+          props.setAll({
+            moduleName: r.module,
+            version: r.version,
+            kind: r.kind,
+            path: r.path,
+          });
+          console.log('set all', props.setAll);
         }}
       >
         {lk.value}
