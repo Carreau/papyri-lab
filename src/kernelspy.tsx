@@ -1,8 +1,5 @@
-import { Signal, ISignal } from '@lumino/signaling'
-import {
-  INotebookTracker,
-  NotebookPanel
-} from '@jupyterlab/notebook'
+import { Signal, ISignal } from '@lumino/signaling';
+import { INotebookTracker, NotebookPanel } from '@jupyterlab/notebook';
 import { VDomModel } from '@jupyterlab/apputils';
 import { Kernel, KernelMessage } from '@jupyterlab/services';
 
@@ -12,7 +9,7 @@ export type MessageThread = {
 };
 
 function isHeader(
-  candidate: { [key: string]: undefined } | KernelMessage.IHeader
+  candidate: { [key: string]: undefined } | KernelMessage.IHeader,
 ): candidate is KernelMessage.IHeader {
   return candidate.msg_id !== undefined;
 }
@@ -22,34 +19,30 @@ function isHeader(
  */
 export class KernelSpyModel extends VDomModel {
   // constructor(kernel?: Kernel.IKernelConnection | null) {
-  constructor(
-    notebookTracker: INotebookTracker,
-    path?: string,
-  ) {
+  constructor(notebookTracker: INotebookTracker, path?: string) {
     super();
-    this._notebookTracker = notebookTracker
-    this._notebookTracker.currentChanged.connect(this.onNotebookChanged, this)
-    this.onNotebookChanged(undefined, {path})
+    this._notebookTracker = notebookTracker;
+    this._notebookTracker.currentChanged.connect(this.onNotebookChanged, this);
+    this.onNotebookChanged(undefined, { path });
   }
 
-  onNotebookChanged(
-    sender: any,
-    args: any
-  ) {
-  // onNotebookChanged(notebookTracker: INotebookTracker, path?: string) {
+  onNotebookChanged(sender: any, args: any) {
+    // onNotebookChanged(notebookTracker: INotebookTracker, path?: string) {
     if (args.path) {
-      this._notebook = this._notebookTracker.find(nb => nb.context.path === args.path) ?? null
+      this._notebook =
+        this._notebookTracker.find(nb => nb.context.path === args.path) ?? null;
     } else {
-      this._notebook = this._notebookTracker.currentWidget
+      this._notebook = this._notebookTracker.currentWidget;
     }
 
     if (this._notebook) {
-      this.kernel = this._notebook.context.sessionContext?.session?.kernel ?? null
+      this.kernel =
+        this._notebook.context.sessionContext?.session?.kernel ?? null;
       this._notebook.context.sessionContext.kernelChanged.connect((_, args) => {
-        this.kernel = args.newValue
-      })
+        this.kernel = args.newValue;
+      });
     } else {
-      this.kernel = null
+      this.kernel = null;
     }
   }
 
@@ -114,18 +107,18 @@ export class KernelSpyModel extends VDomModel {
     });
     const thread: MessageThread = {
       args: this._messages[msgId],
-      children: childThreads
+      children: childThreads,
     };
     return thread;
   }
 
   get questionMarkSubmitted(): ISignal<KernelSpyModel, string> {
-    return this._questionMarkSubmitted
+    return this._questionMarkSubmitted;
   }
 
   protected onMessage(
     sender: Kernel.IKernelConnection,
-    args: Kernel.IAnyMessageArgs
+    args: Kernel.IAnyMessageArgs,
   ) {
     const { msg } = args;
     this._log.push(args);
@@ -141,11 +134,17 @@ export class KernelSpyModel extends VDomModel {
     this.stateChanged.emit(undefined);
 
     // Log the kernel message here.
-    console.log({args})
+    if (args.direction == 'recv') {
+      let msg: any = args.msg;
+      if (msg.msg_type == 'execute_reply') {
+        console.log(msg.content.payload[0].data);
+        console.log(msg.content.payload[0].data['x-vendor/papyri']);
+      }
+    }
   }
 
   private _findParent(
-    args: Kernel.IAnyMessageArgs
+    args: Kernel.IAnyMessageArgs,
   ): Kernel.IAnyMessageArgs | null {
     if (isHeader(args.msg.parent_header)) {
       return this._messages[args.msg.parent_header.msg_id] || null;
@@ -159,6 +158,6 @@ export class KernelSpyModel extends VDomModel {
   private _childLUT: { [key: string]: string[] } = {};
   private _roots: string[] = [];
   private _notebook: NotebookPanel | null = null;
-  private _notebookTracker: INotebookTracker
-  private _questionMarkSubmitted = new Signal<KernelSpyModel, string>(this)
+  private _notebookTracker: INotebookTracker;
+  private _questionMarkSubmitted = new Signal<KernelSpyModel, string>(this);
 }
