@@ -8,7 +8,6 @@
 .papyri-browser {
   display: block;
   overflow: auto;
-  border: solid thin green;
 }
 
 .papyri-browser.jp-RenderedHTMLCommon .highlight > span > code {
