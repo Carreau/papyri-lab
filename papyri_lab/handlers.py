@@ -28,7 +28,7 @@ class RouteHandler(APIHandler):
             key = Key(None, None, None, "papyri")
         if None in key:
             key = store.glob(key)[0]
-        res = encoder.decode(store.get(key)).to_json()
+        res = encoder.decode(store.get(key)).to_dict()
 
         self.finish(json.dumps({"data": res}))
 

@@ -1,4 +1,4 @@
-# before adding somthing here, 
+# before adding somthing here,
 # please wonder, should it be in your systemwide global gitgnore.
 
 *.bundle.*
@@ -67,3 +67,9 @@ celerybeat-schedule
 # Pyre type checker
 .pyre/
 
+node_modules/
+*.egg-info/
+__pycache__/
+tsconfig.tsbuildinfo
+*.ipynb
+.ipynb_checkpoints/

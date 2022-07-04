@@ -35,7 +35,7 @@ const AdmStyle = style({
 /**
  * @returns Main Papyri component; contains documentation and navigation widgets
  */
-function PapyriComponent(): JSX.Element {
+export function PapyriComponent(): JSX.Element {
   const [data, setData] = useState<Array<string>>([]);
   const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
     {
@@ -60,7 +60,7 @@ function PapyriComponent(): JSX.Element {
       name: 'numpy.einsum',
       location: {
         moduleName: 'numpy',
-        version: '1.22.3',
+        version: '1.22.4',
         kind: 'module',
         path: 'numpy.einsum',
       },
@@ -78,7 +78,7 @@ function PapyriComponent(): JSX.Element {
       name: 'Numpy Dev Index',
       location: {
         moduleName: 'numpy',
-        version: '1.22.3',
+        version: '1.22.4',
         kind: 'docs',
         path: 'dev:index',
       },
@@ -86,18 +86,19 @@ function PapyriComponent(): JSX.Element {
   ]);
   const [activeLocation, setActiveLocation] = useState<ILocation>({
     moduleName: 'numpy',
-    version: '1.22.3',
+    version: '1.22.4',
     kind: 'module',
     path: 'numpy.dual',
   });
   const [history, setHistory] = useState<Array<ILocation>>([]);
 
   function onLocationChange(loc: ILocation): void {
-    console.log('OnLocationChange', loc);
     loadPage(loc).then(exists => {
       if (exists) {
         setHistory([...history, activeLocation]);
         setActiveLocation(loc);
+      } else {
+        console.warn('Loc does nto exists', loc);
       }
     });
   }
@@ -135,7 +136,7 @@ function PapyriComponent(): JSX.Element {
         data: {
           arbitrary,
           signature,
-          _content: content,
+          content: content,
           ordered_sections,
           example_section_data,
         },
@@ -174,6 +175,7 @@ function PapyriComponent(): JSX.Element {
           title: 'Examples',
         });
       }
+      console.info(newData);
       setData(newData);
       return true;
     } catch (e) {
@@ -183,7 +185,7 @@ function PapyriComponent(): JSX.Element {
   }
 
   const arb = data.map((x: any) => {
-    return new Section(x.children, x.title);
+    return new Section(x.children, x.title, x.level);
   });
 
   return (
@@ -199,7 +201,7 @@ function PapyriComponent(): JSX.Element {
       <hr />
       {arb.map((x: any, index: number) => {
         return (
-          <DSection key={index} setAll={loadPage}>
+          <DSection key={index} setAll={onLocationChange}>
             {x}
           </DSection>
         );
@@ -211,16 +213,14 @@ function PapyriComponent(): JSX.Element {
 /**
  * A Lumino Widget that wraps a react PapyriWidget.
  */
-export class PapyriWidget extends ReactWidget {
+export class PapyriPanel extends ReactWidget {
   data: any;
   constructor() {
     super();
     this.addClass('jp-ReactWidget');
-    this.data = {};
-  }
-
-  setDX(data: any) {
-    this.data = data;
+    this.id = 'papyri-browser';
+    this.title.label = 'Papyri browser';
+    this.title.closable = true;
   }
 
   render(): JSX.Element {
@@ -233,9 +233,11 @@ const DSection = (props: any) => {
   if (props.setAll === 0) {
     console.log('Empty setAll Section');
   }
+  const VariableHeader = `h${px.level + 1}` as keyof JSX.IntrinsicElements;
+  console.log(px.level);
   return (
     <div>
-      <h1 key={0}>{px.title}</h1>
+      <VariableHeader key={0}>{px.title}</VariableHeader>
       {dynamic_render_many(px.children, props.setAll)}
     </div>
   );
@@ -283,20 +285,15 @@ const DLink = (props: any) => {
         className="exists"
         onClick={e => {
           const r = lk.reference;
-          console.log('link clicked');
           e.preventDefault();
-          console.log('link clicked II');
           e.stopPropagation();
-          console.log('link clicked III');
           e.nativeEvent.stopImmediatePropagation();
-          console.log('link clicked IV', r);
           props.setAll({
             moduleName: r.module,
             version: r.version,
             kind: r.kind,
             path: r.path,
           });
-          console.log('set all', props.setAll);
         }}
       >
         {lk.value}
@@ -618,14 +615,16 @@ class Paragraph {
 class Section {
   title: string;
   children: [any];
+  level: number;
 
-  constructor(children: any, title: string) {
+  constructor(children: any, title: string, level: number) {
     if (['Extended Summary', 'Summary'].includes(title)) {
       this.title = '';
     } else {
       this.title = title;
     }
     this.children = children.map(deserialise);
+    this.level = level;
   }
 }
 

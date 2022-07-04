@@ -3,9 +3,15 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin,
 } from '@jupyterlab/application';
-import { PapyriWidget } from './widget';
+import { PapyriPanel } from './widget';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import {
+  INotebookTracker,
+} from '@jupyterlab/notebook'
+
+import { Token } from '@lumino/coreutils';
 
 import {
   ICommandPalette,
@@ -13,21 +19,47 @@ import {
   WidgetTracker,
 } from '@jupyterlab/apputils';
 
+import { KernelSpyModel } from './kernelspy';
+
+
+namespace CommandIDs {
+  export const open = 'papyri:open'
+  export const close = 'papyri:close'
+  export const toggle = 'papyri:toggle'
+}
+
+const IPapyriExtension = new Token<IPapyriExtension>(
+  'papyri-lab'
+)
+
+export interface IPapyriExtension {
+  kernelSpy: KernelSpyModel
+}
+
+class PapyriExtension implements IPapyriExtension {
+  constructor(notebookTracker: INotebookTracker) {
+    this.kernelSpy = new KernelSpyModel(notebookTracker)
+  }
+
+  kernelSpy: KernelSpyModel
+}
+
 /**
  * Initialization data for the papyri-lab extension.
  */
-const plugin: JupyterFrontEndPlugin<void> = {
+const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
   id: 'papyri-lab:plugin',
   autoStart: true,
+  requires: [INotebookTracker],
   optional: [ICommandPalette, ISettingRegistry, ILayoutRestorer],
+  provides: IPapyriExtension,
   activate: async (
     app: JupyterFrontEnd,
-    palette: ICommandPalette,
+    notebookTracker: INotebookTracker,
+    palette: ICommandPalette | null,
     settingRegistry: ISettingRegistry,
-    restorer: ILayoutRestorer,
-  ) => {
-    console.log('JupyterLab extension papyri-lab is activated!');
-
+    restorer: ILayoutRestorer | null,
+  ): Promise<IPapyriExtension> => {
     if (settingRegistry) {
       try {
         const settings = (await settingRegistry.load(plugin.id)).composite;
@@ -37,42 +69,86 @@ const plugin: JupyterFrontEndPlugin<void> = {
       }
     }
 
-    let widget: MainAreaWidget<PapyriWidget>;
+    let widget: MainAreaWidget<PapyriPanel>;
+    const datasetKey = 'papyriInspector'
+    const extension = new PapyriExtension(notebookTracker)
 
-    const command = 'papyri:open';
-    app.commands.addCommand(command, {
-      label: 'Open papyri browser',
-      execute: () => {
-        if (!widget) {
-          const content = new PapyriWidget();
-          widget = new MainAreaWidget<PapyriWidget>({ content });
-          widget.id = 'papyri-browser';
-          widget.title.label = 'Papyri browser';
-          widget.title.closable = true;
-        }
-        if (!tracker.has(widget)) {
-          // Track the state of the widget for later restoration
-          tracker.add(widget);
-        }
-        if (!widget.isAttached) {
-          // Attach the widget to the main work area if it's not there
-          app.shell.add(widget, 'main');
-        }
-        // Activate the widget
-        app.shell.activateById(widget.id);
-      },
-    });
-    // Add the command to the palette.
-
-    palette.addItem({ command, category: 'Papyri' });
     // Track and restore the widget state
-    const tracker = new WidgetTracker<MainAreaWidget<PapyriWidget>>({
+    const tracker = new WidgetTracker<MainAreaWidget<PapyriPanel>>({
       namespace: 'papyri',
     });
-    restorer.restore(tracker, {
-      command,
-      name: () => 'papyri',
+
+    function isPapyriOpen() {
+      return widget && !widget.isDisposed;
+    }
+
+    function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
+      if (!isPapyriOpen()) {
+        widget = new MainAreaWidget({
+          content: new PapyriPanel()
+        })
+        void tracker.add(widget)
+      }
+      if (!widget.isAttached) {
+        app.shell.add(widget, 'main', {
+          activate: false,
+          mode: 'split-right',
+        })
+      }
+      app.shell.activateById(widget.id)
+      document.body.dataset[datasetKey] = 'open';
+      return widget
+    }
+
+    function closePapyri(): void {
+      widget.dispose()
+      delete document.body.dataset[datasetKey]
+    }
+
+    // Add papyri:open to the command registry
+    app.commands.addCommand(CommandIDs.open, {
+      label: 'Open papyri browser',
+      isEnabled: () => !widget || widget.isDisposed || !widget.isAttached || !widget.isVisible,
+      execute: args => openPapyri(args),
     });
+
+    // Add papyri:close to the command registry
+    app.commands.addCommand(CommandIDs.close, {
+      label: 'Close papyri browser',
+      isEnabled: () => isPapyriOpen(),
+      execute: () => closePapyri(),
+    })
+
+    // Add papyri:toggle to the command registry
+    app.commands.addCommand(CommandIDs.toggle, {
+      label: 'Toggle papyri browser',
+      isToggled: () => isPapyriOpen(),
+      execute: args => {
+        if (isPapyriOpen()) {
+          closePapyri()
+        } else {
+          openPapyri(args)
+        }
+      }
+    })
+
+    // Add the commands above to the command palette, if available.
+    if (palette) {
+      Object.values(CommandIDs).forEach(command => palette.addItem({ command, category: 'Papyri' }))
+    }
+
+    if (restorer) {
+      void restorer.restore(tracker, {
+        command: CommandIDs.toggle,
+        name: () => 'papyri',
+      });
+    }
+
+    extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
+      openPapyri(args)
+    })
+
+    return extension
   },
 };
 
