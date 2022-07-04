@@ -481,7 +481,7 @@ class ExternalLink {
 const DExternalLink = (props: any) => {
   const el: ExternalLink = props.children;
   return (
-    <a className="external" href={el.target}>
+    <a className="external" href={el.target} target="_blank">
       {el.value}
     </a>
   );
@@ -496,7 +496,6 @@ const DMath = (props: any) => {
       </Provider>
     </span>
   );
-  //return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
 const DBlockMath = (props: any) => {
@@ -506,7 +505,6 @@ const DBlockMath = (props: any) => {
       <Node>{m.value}</Node>
     </Provider>
   );
-  //return <div className="not-implemented">{`$$${m.value}$$`}</div>;
 };
 
 class Token {
@@ -660,7 +658,7 @@ class Verbatim {
 class BlockQuote {
   children: [any];
   constructor(data: any) {
-    this.children = data.children;
+    this.children = data.children.map(deserialise);
   }
 }
 
@@ -717,7 +715,9 @@ const DBlockVerbatim = (props: any) => {
 };
 const DBlockQuote = (props: any) => {
   const q: BlockQuote = props.children;
-  return <pre>{q.children.map((x: any) => x + '\n')}</pre>;
+  return (
+    <blockquote>{dynamic_render_many(q.children, props.setAll)}</blockquote>
+  );
 };
 
 const DVerbatim = (props: any) => {
