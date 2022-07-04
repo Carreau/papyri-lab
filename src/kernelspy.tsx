@@ -139,6 +139,9 @@ export class KernelSpyModel extends VDomModel {
       if (msg.msg_type == 'execute_reply') {
         console.log(msg.content.payload[0].data);
         console.log(msg.content.payload[0].data['x-vendor/papyri']);
+        this._questionMarkSubmitted =
+          msg.content.payload[0].data['x-vendor/papyri'];
+        console.log('QMS:', this._questionMarkSubmitted);
       }
     }
   }

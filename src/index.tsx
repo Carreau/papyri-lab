@@ -7,9 +7,7 @@ import { PapyriPanel } from './widget';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import {
-  INotebookTracker,
-} from '@jupyterlab/notebook'
+import { INotebookTracker } from '@jupyterlab/notebook';
 
 import { Token } from '@lumino/coreutils';
 
@@ -21,27 +19,24 @@ import {
 
 import { KernelSpyModel } from './kernelspy';
 
-
 namespace CommandIDs {
-  export const open = 'papyri:open'
-  export const close = 'papyri:close'
-  export const toggle = 'papyri:toggle'
+  export const open = 'papyri:open';
+  export const close = 'papyri:close';
+  export const toggle = 'papyri:toggle';
 }
 
-const IPapyriExtension = new Token<IPapyriExtension>(
-  'papyri-lab'
-)
+const IPapyriExtension = new Token<IPapyriExtension>('papyri-lab');
 
 export interface IPapyriExtension {
-  kernelSpy: KernelSpyModel
+  kernelSpy: KernelSpyModel;
 }
 
 class PapyriExtension implements IPapyriExtension {
   constructor(notebookTracker: INotebookTracker) {
-    this.kernelSpy = new KernelSpyModel(notebookTracker)
+    this.kernelSpy = new KernelSpyModel(notebookTracker);
   }
 
-  kernelSpy: KernelSpyModel
+  kernelSpy: KernelSpyModel;
 }
 
 /**
@@ -70,8 +65,8 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     let widget: MainAreaWidget<PapyriPanel>;
-    const datasetKey = 'papyriInspector'
-    const extension = new PapyriExtension(notebookTracker)
+    const datasetKey = 'papyriInspector';
+    const extension = new PapyriExtension(notebookTracker);
 
     // Track and restore the widget state
     const tracker = new WidgetTracker<MainAreaWidget<PapyriPanel>>({
@@ -85,30 +80,37 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
       if (!isPapyriOpen()) {
         widget = new MainAreaWidget({
-          content: new PapyriPanel()
-        })
-        void tracker.add(widget)
+          content: new PapyriPanel(),
+        });
+        void tracker.add(widget);
       }
       if (!widget.isAttached) {
         app.shell.add(widget, 'main', {
           activate: false,
           mode: 'split-right',
-        })
+        });
       }
-      app.shell.activateById(widget.id)
+      app.shell.activateById(widget.id);
       document.body.dataset[datasetKey] = 'open';
-      return widget
+      //widget.loadPage({
+      //  moduleName: 'papyri',
+      //  version: '0.0.8',
+      //  kind: 'api',
+      //  path: 'papyri',
+      //});
+      return widget;
     }
 
     function closePapyri(): void {
-      widget.dispose()
-      delete document.body.dataset[datasetKey]
+      widget.dispose();
+      delete document.body.dataset[datasetKey];
     }
 
     // Add papyri:open to the command registry
     app.commands.addCommand(CommandIDs.open, {
       label: 'Open papyri browser',
-      isEnabled: () => !widget || widget.isDisposed || !widget.isAttached || !widget.isVisible,
+      isEnabled: () =>
+        !widget || widget.isDisposed || !widget.isAttached || !widget.isVisible,
       execute: args => openPapyri(args),
     });
 
@@ -117,7 +119,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       label: 'Close papyri browser',
       isEnabled: () => isPapyriOpen(),
       execute: () => closePapyri(),
-    })
+    });
 
     // Add papyri:toggle to the command registry
     app.commands.addCommand(CommandIDs.toggle, {
@@ -125,16 +127,18 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       isToggled: () => isPapyriOpen(),
       execute: args => {
         if (isPapyriOpen()) {
-          closePapyri()
+          closePapyri();
         } else {
-          openPapyri(args)
+          openPapyri(args);
         }
-      }
-    })
+      },
+    });
 
     // Add the commands above to the command palette, if available.
     if (palette) {
-      Object.values(CommandIDs).forEach(command => palette.addItem({ command, category: 'Papyri' }))
+      Object.values(CommandIDs).forEach(command =>
+        palette.addItem({ command, category: 'Papyri' }),
+      );
     }
 
     if (restorer) {
@@ -145,10 +149,11 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
-      openPapyri(args)
-    })
+      console.info('args:', args);
+      openPapyri(args);
+    });
 
-    return extension
+    return extension;
   },
 };
 
