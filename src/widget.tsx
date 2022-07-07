@@ -215,16 +215,18 @@ export function PapyriComponent(): JSX.Element {
  */
 export class PapyriPanel extends ReactWidget {
   data: any;
+  comp: any;
   constructor() {
     super();
     this.addClass('jp-ReactWidget');
     this.id = 'papyri-browser';
     this.title.label = 'Papyri browser';
     this.title.closable = true;
+    this.comp = <PapyriComponent />;
   }
 
   render(): JSX.Element {
-    return <PapyriComponent />;
+    return this.comp;
   }
 }
 
@@ -234,7 +236,6 @@ const DSection = (props: any) => {
     console.log('Empty setAll Section');
   }
   const VariableHeader = `h${px.level + 1}` as keyof JSX.IntrinsicElements;
-  console.log(px.level);
   return (
     <div>
       <VariableHeader key={0}>{px.title}</VariableHeader>

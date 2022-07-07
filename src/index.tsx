@@ -92,12 +92,14 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       }
       app.shell.activateById(widget.id);
       document.body.dataset[datasetKey] = 'open';
-      //widget.loadPage({
+      //widget.content.comp.loadPage({
       //  moduleName: 'papyri',
       //  version: '0.0.8',
       //  kind: 'api',
       //  path: 'papyri',
       //});
+      //widget.content.comp;
+      console.log('WCC:', widget.content.comp);
       return widget;
     }
 
@@ -149,8 +151,8 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
-      console.info('args:', args);
-      openPapyri(args);
+      console.info('KSpy questionMarkSubmitted args:', args);
+      //openPapyri(args);
     });
 
     return extension;

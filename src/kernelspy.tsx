@@ -134,9 +134,9 @@ export class KernelSpyModel extends VDomModel {
     this.stateChanged.emit(undefined);
 
     // Log the kernel message here.
-    if (args.direction == 'recv') {
+    if (args.direction === 'recv') {
       let msg: any = args.msg;
-      if (msg.msg_type == 'execute_reply') {
+      if (msg.msg_type === 'execute_reply') {
         console.log(msg.content.payload[0].data);
         console.log(msg.content.payload[0].data['x-vendor/papyri']);
         this._questionMarkSubmitted =
