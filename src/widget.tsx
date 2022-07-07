@@ -149,6 +149,7 @@ class PapyriComponent extends React.Component {
   }
 
   onLocationChange(loc: ILocation): void {
+    console.log('OLC 152', this, this.loadPage);
     this.loadPage(loc).then(exists => {
       if (exists) {
         this.setHistory([...this.history, this.activeLocation]);
@@ -259,7 +260,10 @@ class PapyriComponent extends React.Component {
         <hr />
         {arb.map((x: any, index: number) => {
           return (
-            <DSection key={index} setAll={this.onLocationChange}>
+            <DSection
+              key={index}
+              setAll={(arg: any) => this.onLocationChange(arg)}
+            >
               {x}
             </DSection>
           );
