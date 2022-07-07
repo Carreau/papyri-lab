@@ -78,6 +78,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     function openPapyri(args: any): MainAreaWidget<PapyriPanel> {
+      console.log('openPapyri:');
       if (!isPapyriOpen()) {
         widget = new MainAreaWidget({
           content: new PapyriPanel(),
@@ -92,14 +93,18 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       }
       app.shell.activateById(widget.id);
       document.body.dataset[datasetKey] = 'open';
-      //widget.content.comp.loadPage({
-      //  moduleName: 'papyri',
-      //  version: '0.0.8',
-      //  kind: 'api',
-      //  path: 'papyri',
-      //});
-      //widget.content.comp;
-      console.log('WCC:', widget.content.comp);
+      console.log('WCCC:', widget.content.comp.current);
+      console.log('WCCL:', widget.content.comp.current.loadPage);
+      if (Object.keys(args).length !== 0) {
+        console.log('AA:', args);
+
+        widget.content.comp.current.loadPage({
+          moduleName: '*',
+          version: '*',
+          kind: 'api',
+          path: args.qualname,
+        });
+      }
       return widget;
     }
 
@@ -152,7 +157,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
 
     extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
       console.info('KSpy questionMarkSubmitted args:', args);
-      //openPapyri(args);
+      openPapyri(args);
     });
 
     return extension;

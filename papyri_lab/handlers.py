@@ -17,6 +17,8 @@ class RouteHandler(APIHandler):
         store = GraphStore(ingest_dir)
         if path is not None:
             module, version, kind, path = path.split("/")
+            if module is "*":
+                module = path.split(".")[0]
             if version == "*":
                 version = None
             if kind == "api":
@@ -28,6 +30,7 @@ class RouteHandler(APIHandler):
             key = Key(None, None, None, "papyri")
         if None in key:
             key = store.glob(key)[0]
+        print("finishing with", key)
         res = encoder.decode(store.get(key)).to_dict()
 
         self.finish(json.dumps({"data": res}))

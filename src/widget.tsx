@@ -1,7 +1,7 @@
 import { ReactWidget } from '@jupyterlab/apputils';
 import { style } from 'typestyle';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { requestAPI } from './handler';
 import { ServerConnection } from '@jupyterlab/services';
 import { URLExt } from '@jupyterlab/coreutils';
@@ -32,98 +32,156 @@ const AdmStyle = style({
   },
 });
 
+interface IState {
+  _data: Array<string>;
+  _bookmarks: Array<IBookmark>;
+  _location: ILocation;
+  _history: Array<ILocation>;
+}
+
 /**
  * @returns Main Papyri component; contains documentation and navigation widgets
  */
-export function PapyriComponent(): JSX.Element {
-  const [data, setData] = useState<Array<string>>([]);
-  const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
-    {
-      name: 'papyri',
-      location: {
-        moduleName: 'papyri',
-        version: '0.0.8',
-        kind: 'module',
-        path: 'papyri',
-      },
-    },
-    {
-      name: 'papyri:index',
-      location: {
-        moduleName: 'papyri',
-        version: '0.0.8',
-        kind: 'docs',
-        path: 'index',
-      },
-    },
-    {
-      name: 'numpy.einsum',
-      location: {
+class PapyriComponent extends React.Component {
+  state: IState;
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      _data: [],
+      _bookmarks: [
+        {
+          name: 'papyri',
+          location: {
+            moduleName: 'papyri',
+            version: '0.0.8',
+            kind: 'module',
+            path: 'papyri',
+          },
+        },
+        {
+          name: 'papyri:index',
+          location: {
+            moduleName: 'papyri',
+            version: '0.0.8',
+            kind: 'docs',
+            path: 'index',
+          },
+        },
+        {
+          name: 'numpy.einsum',
+          location: {
+            moduleName: 'numpy',
+            version: '1.22.4',
+            kind: 'module',
+            path: 'numpy.einsum',
+          },
+        },
+        {
+          name: 'dpss',
+          location: {
+            moduleName: 'scipy',
+            version: '*',
+            kind: 'api',
+            path: 'scipy.signal.windows._windows.dpss',
+          },
+        },
+        {
+          name: 'Numpy Dev Index',
+          location: {
+            moduleName: 'numpy',
+            version: '1.22.4',
+            kind: 'docs',
+            path: 'dev:index',
+          },
+        },
+      ],
+      _location: {
         moduleName: 'numpy',
         version: '1.22.4',
         kind: 'module',
-        path: 'numpy.einsum',
+        path: 'numpy.dual',
       },
-    },
-    {
-      name: 'dpss',
-      location: {
-        moduleName: 'scipy',
-        version: '*',
-        kind: 'api',
-        path: 'scipy.signal.windows._windows.dpss',
-      },
-    },
-    {
-      name: 'Numpy Dev Index',
-      location: {
-        moduleName: 'numpy',
-        version: '1.22.4',
-        kind: 'docs',
-        path: 'dev:index',
-      },
-    },
-  ]);
-  const [activeLocation, setActiveLocation] = useState<ILocation>({
-    moduleName: 'numpy',
-    version: '1.22.4',
-    kind: 'module',
-    path: 'numpy.dual',
-  });
-  const [history, setHistory] = useState<Array<ILocation>>([]);
+      _history: [],
+    };
+  }
 
-  function onLocationChange(loc: ILocation): void {
-    loadPage(loc).then(exists => {
+  get data(): Array<string> {
+    return this.state._data;
+  }
+
+  setData(value: Array<string>) {
+    this.setState({ _data: value });
+  }
+
+  get bookmarks() {
+    return this.state._bookmarks;
+  }
+
+  setBookmarks(value: Array<IBookmark>) {
+    this.setState({ _bookmarks: value });
+  }
+
+  get activeLocation() {
+    return this.state._location;
+  }
+
+  setActiveLocation(value: ILocation) {
+    this.setState({ _location: value });
+  }
+  //const [data, setData] = useState<Array<string>>([]);
+  //const [bookmarks, setBookmarks] = useState<Array<IBookmark>>([
+  //]);
+
+  //const [activeLocation, setActiveLocation] = useState<ILocation>({
+  //  moduleName: 'numpy',
+  //  version: '1.22.4',
+  //  kind: 'module',
+  //  path: 'numpy.dual',
+  //});
+  //const [history, setHistory] = useState<Array<ILocation>>([]);
+  //
+  get history() {
+    return this.state._history;
+  }
+
+  setHistory(value: Array<ILocation>) {
+    this.setState({ _history: value });
+  }
+
+  onLocationChange(loc: ILocation): void {
+    this.loadPage(loc).then(exists => {
       if (exists) {
-        setHistory([...history, activeLocation]);
-        setActiveLocation(loc);
+        this.setHistory([...this.history, this.activeLocation]);
+        this.setActiveLocation(loc);
       } else {
         console.warn('Loc does nto exists', loc);
       }
     });
   }
 
-  function goBack(): void {
+  goBack(): void {
+    const history = this.history;
     const loc = history.pop();
     if (loc !== undefined) {
-      loadPage(loc).then(exists => {
+      this.loadPage(loc).then(exists => {
         if (exists) {
-          setActiveLocation(loc);
-          setHistory(history);
+          this.setActiveLocation(loc);
+          this.setHistory(history);
         }
       });
     }
   }
 
-  function refresh(): void {
+  refresh(): void {
+    const history = this.history;
     const loc = history.pop();
     if (loc !== undefined) {
-      setActiveLocation(loc);
-      loadPage(loc);
+      this.setActiveLocation(loc);
+      this.loadPage(loc);
     }
   }
 
-  async function loadPage({
+  async loadPage({
     moduleName,
     version,
     kind,
@@ -175,8 +233,7 @@ export function PapyriComponent(): JSX.Element {
           title: 'Examples',
         });
       }
-      console.info(newData);
-      setData(newData);
+      this.setData(newData);
       return true;
     } catch (e) {
       console.warn(`Error loading page [${endpoint}] ${e}`);
@@ -184,30 +241,32 @@ export function PapyriComponent(): JSX.Element {
     }
   }
 
-  const arb = data.map((x: any) => {
-    return new Section(x.children, x.title, x.level);
-  });
-
-  return (
-    <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
-      <PapyriToolbar
-        bookmarks={bookmarks}
-        setBookmarks={setBookmarks}
-        location={history[history.length - 1]}
-        onLocationChange={onLocationChange}
-        goBack={goBack}
-        refresh={refresh}
-      />
-      <hr />
-      {arb.map((x: any, index: number) => {
-        return (
-          <DSection key={index} setAll={onLocationChange}>
-            {x}
-          </DSection>
-        );
-      })}
-    </div>
-  );
+  render() {
+    const arb = this.data.map((x: any) => {
+      return new Section(x.children, x.title, x.level);
+    });
+    return (
+      <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
+        <PapyriToolbar
+          bookmarks={this.bookmarks}
+          setBookmarks={this.setBookmarks}
+          location={this.history[this.history.length - 1]}
+          onLocationChange={this.onLocationChange}
+          goBack={this.goBack}
+          refresh={this.refresh}
+          inst={this}
+        />
+        <hr />
+        {arb.map((x: any, index: number) => {
+          return (
+            <DSection key={index} setAll={this.onLocationChange}>
+              {x}
+            </DSection>
+          );
+        })}
+      </div>
+    );
+  }
 }
 
 /**
@@ -222,11 +281,11 @@ export class PapyriPanel extends ReactWidget {
     this.id = 'papyri-browser';
     this.title.label = 'Papyri browser';
     this.title.closable = true;
-    this.comp = <PapyriComponent />;
+    this.comp = React.createRef();
   }
 
   render(): JSX.Element {
-    return this.comp;
+    return <PapyriComponent ref={this.comp} />;
   }
 }
 

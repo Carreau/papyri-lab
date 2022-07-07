@@ -39,6 +39,7 @@ export default function PapyriToolbar({
   onLocationChange,
   goBack,
   refresh,
+  inst,
 }: {
   bookmarks: Array<IBookmark>;
   setBookmarks: (bookmark: Array<IBookmark>) => void;
@@ -46,6 +47,7 @@ export default function PapyriToolbar({
   goBack: () => void;
   onLocationChange: (loc: ILocation) => void;
   refresh: () => void;
+  inst: any;
 }): JSX.Element {
   const [activeBookmark, setActiveBookmark] = useState<IBookmark | undefined>();
 
@@ -53,7 +55,7 @@ export default function PapyriToolbar({
     const bookmark = bookmarks.find(({ name }) => name === event.target.value);
     if (bookmark !== undefined) {
       setActiveBookmark(bookmark);
-      onLocationChange(bookmark.location);
+      inst.onLocationChange(bookmark.location);
     }
   }
 
@@ -63,7 +65,7 @@ export default function PapyriToolbar({
         <InputGroup
           value={location?.moduleName}
           onChange={(e: any) =>
-            onLocationChange({ ...location, moduleName: e.target.value })
+            inst.onLocationChange({ ...location, moduleName: e.target.value })
           }
           type="text"
           placeholder="Module"
@@ -72,7 +74,7 @@ export default function PapyriToolbar({
         <InputGroup
           value={location?.version}
           onChange={(e: any) =>
-            onLocationChange({ ...location, version: e.target.value })
+            inst.onLocationChange({ ...location, version: e.target.value })
           }
           type="text"
           placeholder="Version"
@@ -82,7 +84,7 @@ export default function PapyriToolbar({
           value={location?.kind}
           defaultValue="docs"
           onChange={e =>
-            onLocationChange({ ...location, kind: e.target.value })
+            inst.onLocationChange({ ...location, kind: e.target.value })
           }
         >
           <option value="api">API</option>
@@ -92,7 +94,7 @@ export default function PapyriToolbar({
         <InputGroup
           value={location?.path}
           onChange={(e: any) =>
-            onLocationChange({ ...location, path: e.target.value })
+            inst.onLocationChange({ ...location, path: e.target.value })
           }
           type="text"
           placeholder="Search Path"

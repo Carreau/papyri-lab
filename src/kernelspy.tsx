@@ -131,7 +131,6 @@ export class KernelSpyModel extends VDomModel {
       this._childLUT[header.msg_id] = this._childLUT[header.msg_id] || [];
       this._childLUT[header.msg_id].push(msg.header.msg_id);
     }
-    this.stateChanged.emit(undefined);
 
     // Log the kernel message here.
     if (args.direction === 'recv') {
@@ -139,11 +138,13 @@ export class KernelSpyModel extends VDomModel {
       if (msg.msg_type === 'execute_reply') {
         console.log(msg.content.payload[0].data);
         console.log(msg.content.payload[0].data['x-vendor/papyri']);
-        this._questionMarkSubmitted =
-          msg.content.payload[0].data['x-vendor/papyri'];
+        this._questionMarkSubmitted.emit(
+          msg.content.payload[0].data['x-vendor/papyri'],
+        );
         console.log('QMS:', this._questionMarkSubmitted);
       }
     }
+    this.stateChanged.emit(undefined);
   }
 
   private _findParent(
