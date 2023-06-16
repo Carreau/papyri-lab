@@ -109,3 +109,26 @@ folder is located. Then you can remove the symlink named `papyri-lab` within tha
 ### Packaging the extension
 
 See [RELEASE](RELEASE.md)
+
+
+# Usage
+
+For the time being you might need 
+- [this beanch](https://github.com/Carreau/ipython/tree/papyri-hook-example) of IPython. 
+- To run `papyri gen <some lib>` and `papyri ingest <some lib>`
+
+This will change in the future but is required for now. 
+
+How does this work. 
+
+ - when you do `soemthing?` in JupyterLab the IPython kernel will send a message to the frontend: `{'papyri/help':'open
+   doc for something'}`
+ - The JupyterLab extension will see this message and ask the Jupyterserver to 
+    - search in `~/.papyri/ingest/<yourlib>/<version>/<something>`, 
+    - load the data, 
+    - send it back to JupyterLab
+
+ - JupyterLab renders it in a side-pannel with plots and all. 
+
+
+

@@ -37,6 +37,7 @@ interface IState {
   _bookmarks: Array<IBookmark>;
   _location: ILocation;
   _history: Array<ILocation>;
+  backrefs: Array<Array<string>>;
 }
 
 /**
@@ -48,6 +49,7 @@ class PapyriComponent extends React.Component {
     super(props);
     this.state = {
       _data: [],
+      backrefs: [],
       _bookmarks: [
         {
           name: 'papyri',
@@ -71,7 +73,7 @@ class PapyriComponent extends React.Component {
           name: 'numpy.einsum',
           location: {
             moduleName: 'numpy',
-            version: '1.22.4',
+            version: '1.23.1',
             kind: 'module',
             path: 'numpy.einsum',
           },
@@ -89,7 +91,7 @@ class PapyriComponent extends React.Component {
           name: 'Numpy Dev Index',
           location: {
             moduleName: 'numpy',
-            version: '1.22.4',
+            version: '1.23.1',
             kind: 'docs',
             path: 'dev:index',
           },
@@ -97,7 +99,7 @@ class PapyriComponent extends React.Component {
       ],
       _location: {
         moduleName: 'numpy',
-        version: '1.22.4',
+        version: '1.23.1',
         kind: 'module',
         path: 'numpy.dual',
       },
@@ -109,8 +111,8 @@ class PapyriComponent extends React.Component {
     return this.state._data;
   }
 
-  setData(value: Array<string>) {
-    this.setState({ _data: value });
+  setData(value: Array<string>, refs: Array<Array<string>>) {
+    this.setState({ _data: value, backrefs: refs });
   }
 
   get bookmarks() {
@@ -149,7 +151,6 @@ class PapyriComponent extends React.Component {
   }
 
   onLocationChange(loc: ILocation): void {
-    console.log('OLC 152', this, this.loadPage);
     this.loadPage(loc).then(exists => {
       if (exists) {
         this.setHistory([...this.history, this.activeLocation]);
@@ -199,8 +200,10 @@ class PapyriComponent extends React.Component {
           ordered_sections,
           example_section_data,
         },
+        refs,
       } = await requestAPI<any>(endpoint);
       const newData = arbitrary;
+      console.info(refs);
 
       // If the response has a function signature, create a section for it
       if (signature !== undefined) {
@@ -234,7 +237,7 @@ class PapyriComponent extends React.Component {
           title: 'Examples',
         });
       }
-      this.setData(newData);
+      this.setData(newData, refs);
       return true;
     } catch (e) {
       console.warn(`Error loading page [${endpoint}] ${e}`);
@@ -246,6 +249,22 @@ class PapyriComponent extends React.Component {
     const arb = this.data.map((x: any) => {
       return new Section(x.children, x.title, x.level);
     });
+    const brs: Array<Array<string>> = this.state.backrefs;
+    //.map((x: any) => {
+    //      console.log(x);
+    //  });
+    //
+    const back_lnks = brs.map((x: any) => {
+      const ref = { module: x[0], version: x[1], kind: x[2], path: x[3] };
+
+      return new Link({
+        value: x[3],
+        reference: ref,
+        kind: 'api',
+        exist: true,
+      });
+    });
+    const setAll = (arg: any) => this.onLocationChange(arg);
     return (
       <div className={`papyri-browser jp-RenderedHTMLCommon ${PBStyle}`}>
         <PapyriToolbar
@@ -260,12 +279,27 @@ class PapyriComponent extends React.Component {
         <hr />
         {arb.map((x: any, index: number) => {
           return (
-            <DSection
-              key={index}
-              setAll={(arg: any) => this.onLocationChange(arg)}
-            >
+            <DSection key={index} setAll={setAll}>
               {x}
             </DSection>
+          );
+        })}
+        {back_lnks.length > 0 ? (
+          <>
+            <h1>Back References</h1>
+            <p>All the following pages link to the current one</p>
+          </>
+        ) : (
+          <></>
+        )}
+        {back_lnks.map((bl: any) => {
+          return (
+            <React.Fragment>
+              <DLink className="exists" setAll={setAll}>
+                {bl}
+              </DLink>
+              <br />
+            </React.Fragment>
           );
         })}
       </div>
@@ -302,6 +336,7 @@ const DSection = (props: any) => {
   return (
     <div>
       <VariableHeader key={0}>{px.title}</VariableHeader>
+
       {dynamic_render_many(px.children, props.setAll)}
     </div>
   );
@@ -342,28 +377,32 @@ const DDefList = (props: any) => {
 const DLink = (props: any) => {
   const lk: Link = props.children;
   const r = lk.reference;
-  return (
-    <code className="DLINK">
-      <a
-        href={`${r.module}/${r.version}/${r.kind}/${r.path}`}
-        className="exists"
-        onClick={e => {
-          const r = lk.reference;
-          e.preventDefault();
-          e.stopPropagation();
-          e.nativeEvent.stopImmediatePropagation();
-          props.setAll({
-            moduleName: r.module,
-            version: r.version,
-            kind: r.kind,
-            path: r.path,
-          });
-        }}
-      >
-        {lk.value}
-      </a>
-    </code>
-  );
+  if (r.kind == 'local') {
+    return <code className="DLINK local">{lk.value}</code>;
+  } else {
+    return (
+      <code className="DLINK">
+        <a
+          href={`${r.module}/${r.version}/${r.kind}/${r.path}`}
+          className="exists"
+          onClick={e => {
+            const r = lk.reference;
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            props.setAll({
+              moduleName: r.module,
+              version: r.version,
+              kind: r.kind,
+              path: r.path,
+            });
+          }}
+        >
+          {lk.value}
+        </a>
+      </code>
+    );
+  }
 };
 
 const DFig = (props: any) => {
@@ -554,11 +593,9 @@ const DExternalLink = (props: any) => {
 const DMath = (props: any) => {
   const m: BlockMath = props.children;
   return (
-    <span className="not-implemented">
-      <Provider>
-        <Node inline>{m.value}</Node>
-      </Provider>
-    </span>
+    <Provider>
+      <Node inline>{m.value}</Node>
+    </Provider>
   );
 };
 
@@ -686,7 +723,12 @@ class Section {
       this.title = title;
     }
     this.children = children.map(deserialise);
-    this.level = level;
+    // TODO: figure out why level is undefined sometimes.
+    if (level === undefined) {
+      this.level = 0;
+    } else {
+      this.level = level;
+    }
   }
 }
 
@@ -700,12 +742,18 @@ class Admonition {
     this.kind = data.kind;
   }
 }
+
+const ADM_map: Map<string, string> = new Map([
+  ['versionadded', 'New in version'],
+]);
+
 const DAdmonition = (props: any) => {
   const adm: Admonition = props.children;
+  const title: string = ADM_map.get(adm.kind) || adm.kind;
   return (
     <div className={AdmStyle}>
       <div>
-        {adm.kind}:{adm.title}
+        {title} {adm.title}
       </div>
       {dynamic_render_many(adm.children, props.setAll)}
     </div>

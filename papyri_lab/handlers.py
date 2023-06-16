@@ -31,9 +31,10 @@ class RouteHandler(APIHandler):
         if None in key:
             key = store.glob(key)[0]
         print("finishing with", key)
-        res = encoder.decode(store.get(key)).to_dict()
+        data, backrefs, fref = store.get_all(key)
+        res = encoder.decode(data).to_dict()
 
-        self.finish(json.dumps({"data": res}))
+        self.finish(json.dumps({"data": res, "refs": list(sorted(backrefs))}))
 
 
 # /papyri-lab/get_example/numpy/1.22.3/module/numpy.einsum?1649790118903

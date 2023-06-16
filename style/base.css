@@ -165,7 +165,6 @@ li > p {
 h1,
 h2,
 h3 {
-  color: #4e4e4e;
   font-weight: 400;
   margin-bottom: 1rem;
   border-bottom: 1px solid var(--nc-bg-3);
@@ -285,7 +284,7 @@ strong {
 }
 
 .papyri-browser img {
-  max-width: 40%;
+  max-width: 80%;
 }
 
 pre.highlight.execed,
