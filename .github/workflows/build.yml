@@ -18,12 +18,10 @@ jobs:
     - name: Install dependencies
       run: python -m pip install -U jupyterlab==4.0.2 check-manifest
 
-    - name: Debugging with tmate
-      uses: mxschmitt/action-tmate@v3.16
-
     - name: Build the extension
       run: |
         set -eux
+        yarn install
         jlpm
         jlpm lint:check
         python -m pip install .
@@ -40,6 +38,10 @@ jobs:
         cp dist/*.tar.gz myextension.tar.gz
         pip uninstall -y "papyri_lab" jupyterlab
         rm -rf myextension
+
+    - name: Debugging with tmate
+      if: ${{ always() }}
+      uses: mxschmitt/action-tmate@v3.16
 
     - uses: actions/upload-artifact@v2
       with:
