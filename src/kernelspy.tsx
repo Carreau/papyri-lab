@@ -28,6 +28,9 @@ export class KernelSpyModel extends VDomModel {
 
   onNotebookChanged(sender: any, args: any) {
     // onNotebookChanged(notebookTracker: INotebookTracker, path?: string) {
+    console.log('onNotebookChanged args start');
+    console.log(args);
+    console.log('onNotebookChanged args end');
     if (args.path) {
       this._notebook =
         this._notebookTracker.find(nb => nb.context.path === args.path) ?? null;
@@ -113,6 +116,7 @@ export class KernelSpyModel extends VDomModel {
   }
 
   get questionMarkSubmitted(): ISignal<KernelSpyModel, string> {
+    console.log('questionMarkSubmitted');
     return this._questionMarkSubmitted;
   }
 
@@ -120,6 +124,7 @@ export class KernelSpyModel extends VDomModel {
     sender: Kernel.IKernelConnection,
     args: Kernel.IAnyMessageArgs,
   ) {
+    console.log('onMessage');
     const { msg } = args;
     this._log.push(args);
     this._messages[msg.header.msg_id] = args;
@@ -134,6 +139,7 @@ export class KernelSpyModel extends VDomModel {
 
     // Log the kernel message here.
     if (args.direction === 'recv') {
+      console.log('args.direction');
       let msg: any = args.msg;
       if (msg.msg_type === 'execute_reply') {
         console.log(msg.content.payload[0].data);

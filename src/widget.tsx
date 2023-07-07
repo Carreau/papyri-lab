@@ -73,9 +73,9 @@ class PapyriComponent extends React.Component {
           name: 'numpy.einsum',
           location: {
             moduleName: 'numpy',
-            version: '1.23.1',
+            version: '1.25.0',
             kind: 'module',
-            path: 'numpy.einsum',
+            path: 'numpy:einsum',
           },
         },
         {
@@ -91,7 +91,7 @@ class PapyriComponent extends React.Component {
           name: 'Numpy Dev Index',
           location: {
             moduleName: 'numpy',
-            version: '1.23.1',
+            version: '1.25.0',
             kind: 'docs',
             path: 'dev:index',
           },
@@ -99,7 +99,7 @@ class PapyriComponent extends React.Component {
       ],
       _location: {
         moduleName: 'numpy',
-        version: '1.23.1',
+        version: '1.25.0',
         kind: 'module',
         path: 'numpy.dual',
       },
@@ -227,6 +227,7 @@ class PapyriComponent extends React.Component {
         }
       });
       Object.entries(content).forEach(([key, value]: [string, any]) => {
+        console.log('Iterating over content');
         if (value.children.length > 0) {
           newData.push({ children: value.children, title: key });
         }
@@ -247,13 +248,18 @@ class PapyriComponent extends React.Component {
 
   render() {
     const arb = this.data.map((x: any) => {
+      console.log('render: this.data.map');
+      console.log('x start');
+      console.log(x);
+      console.log('x end');
       return new Section(x.children, x.title, x.level);
     });
-    const brs: Array<Array<string>> = this.state.backrefs;
+    // const brs: Array<Array<string>> = this.state.backrefs;
     //.map((x: any) => {
     //      console.log(x);
     //  });
     //
+    const brs: Array<Array<string>> = [[]];
     const back_lnks = brs.map((x: any) => {
       const ref = { module: x[0], version: x[1], kind: x[2], path: x[3] };
 
@@ -502,6 +508,13 @@ class Fig {
 class Parameters {
   children: [Param];
   constructor(props: any) {
+    console.log('Parameters this');
+    console.log(this);
+    console.log(props);
+    console.log('Parameters end');
+    // if (!props) {
+    //   return;
+    // }
     this.children = props.children.map(
       (x: any) => new Param({ ...x, setAll: props.setAll }),
     );
@@ -711,6 +724,8 @@ class Paragraph {
   }
 }
 
+
+
 class Section {
   title: string;
   children: [any];
@@ -722,7 +737,16 @@ class Section {
     } else {
       this.title = title;
     }
-    this.children = children.map(deserialise);
+
+    const childrenFilter: any = [];
+    children.forEach((item: any) => {
+      if (item.type !== 'Parameters') {
+        childrenFilter.push(item);
+      }
+    });
+
+    // debugger;
+    this.children = childrenFilter.map(deserialise);
     // TODO: figure out why level is undefined sometimes.
     if (level === undefined) {
       this.level = 0;
@@ -907,6 +931,10 @@ const deserialise = (item: any) => {
   const ty: string = item.type;
   if (smap.has(ty)) {
     const co = smap.get(ty);
+    // if ()
+    if (!item.hasOwnProperty('data')) {
+      debugger;
+    }
     const res = new co(item.data);
     return res;
   }
