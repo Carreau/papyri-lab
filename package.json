@@ -64,7 +64,8 @@
     "@jupyterlab/ui-components": "^3.3.3",
     "@lumino/widgets": "^1.31.1",
     "@nteract/mathjax": "^4.0.16",
-    "@types/react": "^17.0.38"
+    "@types/react": "^17.0.38",
+    "typestyle": "^2.4.0"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.0.2",
