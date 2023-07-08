@@ -56,6 +56,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: 'x64'
+    - name: Setup node
+      uses: actions/setup-node@v3
     - uses: actions/download-artifact@v2
       with:
         name: myextension-sdist
