@@ -33,7 +33,6 @@ export interface IPapyriExtension {
 
 class PapyriExtension implements IPapyriExtension {
   constructor(notebookTracker: INotebookTracker) {
-    console.log("p ex")
     this.kernelSpy = new KernelSpyModel(notebookTracker);
   }
 
@@ -75,7 +74,6 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     });
 
     function isPapyriOpen() {
-      console.log("isPapyriOpen function called...")
       return widget && !widget.isDisposed;
     }
 
@@ -83,6 +81,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       args: any,
       activate = true,
     ): MainAreaWidget<PapyriPanel> {
+      console.log('openPapyri:', args);
       if (!isPapyriOpen()) {
         widget = new MainAreaWidget({
           content: new PapyriPanel(),
@@ -96,7 +95,6 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
         });
       }
       if (activate == true) {
-        console.log('activate == true');
         app.shell.activateById(widget.id);
       }
       document.body.dataset[datasetKey] = 'open';

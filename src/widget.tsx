@@ -227,7 +227,6 @@ class PapyriComponent extends React.Component {
         }
       });
       Object.entries(content).forEach(([key, value]: [string, any]) => {
-        console.log('Iterating over content');
         if (value.children.length > 0) {
           newData.push({ children: value.children, title: key });
         }
