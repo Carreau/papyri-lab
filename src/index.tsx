@@ -66,11 +66,8 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     let widget: MainAreaWidget<PapyriPanel>;
-    // console.log("let widget");
-    // console.log(widget);
     const datasetKey = 'papyriInspector';
     const extension = new PapyriExtension(notebookTracker);
-    // debugger
 
     // Track and restore the widget state
     const tracker = new WidgetTracker<MainAreaWidget<PapyriPanel>>({
@@ -79,7 +76,6 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
 
     function isPapyriOpen() {
       console.log("isPapyriOpen function called...")
-      // console.log(widget);
       return widget && !widget.isDisposed;
     }
 
@@ -87,17 +83,13 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       args: any,
       activate = true,
     ): MainAreaWidget<PapyriPanel> {
-      console.log('openPapyri:', args);
       if (!isPapyriOpen()) {
-        // debugger
-        console.log('!isPapyriOpen()');
         widget = new MainAreaWidget({
           content: new PapyriPanel(),
         });
         void tracker.add(widget);
       }
       if (!widget.isAttached) {
-        console.log('!widget.isAttached');
         app.shell.add(widget, 'main', {
           activate: false,
           mode: 'split-right',
@@ -119,12 +111,10 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
           path: args.qualname,
         });
       }
-      console.log("returning widget")
       return widget;
     }
 
     function closePapyri(): void {
-      console.log("closing papyri")
       widget.dispose();
       delete document.body.dataset[datasetKey];
     }
@@ -149,10 +139,7 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       label: 'Toggle papyri browser',
       isToggled: () => isPapyriOpen(),
       execute: args => {
-        console.log("check isPapyriOpen")
         if (isPapyriOpen()) {
-          console.log("close papyri")
-
           closePapyri();
         } else {
           openPapyri(args);
@@ -175,7 +162,6 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
     }
 
     extension.kernelSpy.questionMarkSubmitted.connect((_, args) => {
-      debugger;
       console.info('KSpy questionMarkSubmitted args:', args);
       if (args !== undefined) {
         openPapyri(args, false);

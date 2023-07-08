@@ -2,6 +2,7 @@ name: Build
 
 on:
   push:
+    branches: main
   pull_request:
     branches: '*'
 
@@ -21,9 +22,7 @@ jobs:
     - name: Build the extension
       run: |
         set -eux
-        yarn install
         jlpm
-        # jlpm lint:check
         python -m pip install .
 
         jupyter server extension list 2>&1 | grep -ie "papyri_lab.*OK"

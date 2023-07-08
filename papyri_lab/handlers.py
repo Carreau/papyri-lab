@@ -34,7 +34,7 @@ class RouteHandler(APIHandler):
         data, backrefs, fref = store.get_all(key)
         res = encoder.decode(data).to_dict()
 
-        # import ipdb as pdb; pdb.set_trace()
+        # TODO: FIX THIS: cannot json serialize backrefs
         # self.finish(json.dumps({"data": res, "refs": list(sorted(backrefs))}))
         self.finish(json.dumps({"data": res}))
 

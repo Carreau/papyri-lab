@@ -248,10 +248,6 @@ class PapyriComponent extends React.Component {
 
   render() {
     const arb = this.data.map((x: any) => {
-      console.log('render: this.data.map');
-      console.log('x start');
-      console.log(x);
-      console.log('x end');
       return new Section(x.children, x.title, x.level);
     });
     // const brs: Array<Array<string>> = this.state.backrefs;
@@ -508,13 +504,6 @@ class Fig {
 class Parameters {
   children: [Param];
   constructor(props: any) {
-    console.log('Parameters this');
-    console.log(this);
-    console.log(props);
-    console.log('Parameters end');
-    // if (!props) {
-    //   return;
-    // }
     this.children = props.children.map(
       (x: any) => new Param({ ...x, setAll: props.setAll }),
     );
@@ -724,8 +713,6 @@ class Paragraph {
   }
 }
 
-
-
 class Section {
   title: string;
   children: [any];
@@ -931,10 +918,6 @@ const deserialise = (item: any) => {
   const ty: string = item.type;
   if (smap.has(ty)) {
     const co = smap.get(ty);
-    // if ()
-    if (!item.hasOwnProperty('data')) {
-      debugger;
-    }
     const res = new co(item.data);
     return res;
   }
