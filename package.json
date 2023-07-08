@@ -55,8 +55,16 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^4.0.0",
+    "@jupyterlab/apputils": "^4.1.2",
     "@jupyterlab/coreutils": "^6.0.0",
-    "@jupyterlab/services": "^7.0.0"
+    "@jupyterlab/notebook": "^4.0.2",
+    "@jupyterlab/services": "^7.0.0",
+    "@jupyterlab/settingregistry": "^4.0.2",
+    "@jupyterlab/ui-components": "^4.0.2",
+    "@lumino/coreutils": "^2.1.1",
+    "@lumino/signaling": "^2.1.1",
+    "@nteract/mathjax": "^4.0.16",
+    "typestyle": "^2.4.0"
   },
   "devDependencies": {
     "@jupyterlab/builder": "^4.0.0",

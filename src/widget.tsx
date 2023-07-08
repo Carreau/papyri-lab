@@ -649,7 +649,7 @@ const DToken = (props: any) => {
         </React.Fragment>
       );
     } else {
-      return <span className={t.type_}>{t.link}</span>;
+      return <span className={t.type_}>{t.link as string}</span>;
     }
   } else {
     return (
