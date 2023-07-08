@@ -59,6 +59,7 @@ jobs:
     - uses: actions/download-artifact@v2
       with:
         name: myextension-sdist
+
     - name: Install and Test
       run: |
         set -eux
@@ -69,3 +70,7 @@ jobs:
         pip install jupyterlab
         jupyter labextension list 2>&1 | grep -ie "papyri-lab.*OK"
         python -m jupyterlab.browser_check
+
+    - name: Debugging with tmate
+      if: ${{ always() }}
+      uses: mxschmitt/action-tmate@v3.16
