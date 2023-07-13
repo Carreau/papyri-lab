@@ -1,14 +1,12 @@
 import { expect, test } from '@jupyterlab/galata';
 
-test.describe('Notebook Tests', () => {
-  test('Create New Notebook', async ({ page, tmpPath }) => {
-    const fileName = 'create_test.ipynb';
-    await page.notebook.createNew(fileName);
-    expect(
-      await page.waitForSelector(`[role="main"] >> text=${fileName}`)
-    ).toBeTruthy();
-    expect(await page.contents.fileExists(`${tmpPath}/${fileName}`)).toEqual(
-      true
-    );
+
+test.describe('Papyri Browser Tests', () => {
+  test('Open Papyri Browser', async ({ page, tmpPath }) => {
+    await page.menu.clickMenuItem('View>Activate Command Palette')
+    await page.keyboard.type('papyri', { delay: 50 })
+    await page.keyboard.press('Enter')
+    await page.getByText('Bookmarks:papyripapyri:indexnumpy.einsumdpssNumpy Dev Index')
+    expect(page.locator('#tab-key-2-1')).toContainText('Papyri browser')
   });
 });
