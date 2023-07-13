@@ -74,6 +74,7 @@ tsconfig.tsbuildinfo
 *.ipynb
 .ipynb_checkpoints/
 
+.yarn/
 
 **/test-results/
 **/playwright-report/
