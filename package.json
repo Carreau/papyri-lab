@@ -28,6 +28,9 @@
     "type": "git",
     "url": "https://github.com/Carreau/papyri-lab.git"
   },
+  "workspaces": [
+    "ui-tests"
+  ],
   "scripts": {
     "build": "jlpm build:lib && jlpm build:labextension:dev",
     "build:prod": "jlpm clean && jlpm build:lib && jlpm build:labextension",
