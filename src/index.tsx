@@ -99,7 +99,6 @@ const plugin: JupyterFrontEndPlugin<IPapyriExtension> = {
       }
       document.body.dataset[datasetKey] = 'open';
       console.log('WCCC:', widget.content.comp.current);
-      console.log('WCCL:', widget.content.comp.current.loadPage);
       if (Object.keys(args).length !== 0 && args !== undefined) {
         console.log('AA:', args);
 

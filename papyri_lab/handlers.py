@@ -34,7 +34,9 @@ class RouteHandler(APIHandler):
         data, backrefs, fref = store.get_all(key)
         res = encoder.decode(data).to_dict()
 
-        self.finish(json.dumps({"data": res, "refs": list(sorted(backrefs))}))
+        # TODO: FIX THIS: cannot json serialize backrefs
+        # self.finish(json.dumps({"data": res, "refs": list(sorted(backrefs))}))
+        self.finish(json.dumps({"data": res}))
 
 
 # /papyri-lab/get_example/numpy/1.22.3/module/numpy.einsum?1649790118903

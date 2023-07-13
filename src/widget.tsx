@@ -73,9 +73,9 @@ class PapyriComponent extends React.Component {
           name: 'numpy.einsum',
           location: {
             moduleName: 'numpy',
-            version: '1.23.1',
+            version: '1.25.0',
             kind: 'module',
-            path: 'numpy.einsum',
+            path: 'numpy:einsum',
           },
         },
         {
@@ -91,7 +91,7 @@ class PapyriComponent extends React.Component {
           name: 'Numpy Dev Index',
           location: {
             moduleName: 'numpy',
-            version: '1.23.1',
+            version: '1.25.0',
             kind: 'docs',
             path: 'dev:index',
           },
@@ -99,7 +99,7 @@ class PapyriComponent extends React.Component {
       ],
       _location: {
         moduleName: 'numpy',
-        version: '1.23.1',
+        version: '1.25.0',
         kind: 'module',
         path: 'numpy.dual',
       },
@@ -249,11 +249,12 @@ class PapyriComponent extends React.Component {
     const arb = this.data.map((x: any) => {
       return new Section(x.children, x.title, x.level);
     });
-    const brs: Array<Array<string>> = this.state.backrefs;
+    // const brs: Array<Array<string>> = this.state.backrefs;
     //.map((x: any) => {
     //      console.log(x);
     //  });
     //
+    const brs: Array<Array<string>> = [[]];
     const back_lnks = brs.map((x: any) => {
       const ref = { module: x[0], version: x[1], kind: x[2], path: x[3] };
 
@@ -636,7 +637,7 @@ const DToken = (props: any) => {
         </React.Fragment>
       );
     } else {
-      return <span className={t.type_}>{t.link}</span>;
+      return <span className={t.type_}>{t.link as string}</span>;
     }
   } else {
     return (
@@ -722,7 +723,16 @@ class Section {
     } else {
       this.title = title;
     }
-    this.children = children.map(deserialise);
+
+    const childrenFilter: any = [];
+    children.forEach((item: any) => {
+      if (item.type !== 'Parameters') {
+        childrenFilter.push(item);
+      }
+    });
+
+    // debugger;
+    this.children = childrenFilter.map(deserialise);
     // TODO: figure out why level is undefined sometimes.
     if (level === undefined) {
       this.level = 0;

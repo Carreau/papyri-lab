@@ -69,7 +69,7 @@ export default function PapyriToolbar({
           }
           type="text"
           placeholder="Module"
-          leftIcon="box"
+          rightIcon="box"
         />
         <InputGroup
           value={location?.version}
@@ -98,12 +98,12 @@ export default function PapyriToolbar({
           }
           type="text"
           placeholder="Search Path"
-          leftIcon="path-search"
+          rightIcon="path-search"
         />
-        <Button onClick={goBack} icon="arrow-left" small>
+        <Button onClick={goBack} small>
           Back
         </Button>
-        <Button onClick={refresh} icon="refresh" small>
+        <Button onClick={refresh} small>
           Refresh
         </Button>
       </div>
