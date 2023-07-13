@@ -44,6 +44,18 @@ jobs:
         name: myextension-sdist
         path: myextension.tar.gz
 
+    - name: UI Test Setup
+      run: jlpm install
+      working-directory: ui-tests
+
+    - name: "UI Test Setup: Install Chromium"
+      run: jlpm playwright install chromium
+      working-directory: ui-tests
+
+    - name: Run UI Test
+      run: jlpm playwright test
+      working-directory: ui-tests
+
   test_isolated:
     needs: build
     runs-on: ubuntu-latest

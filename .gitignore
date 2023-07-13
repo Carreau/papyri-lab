@@ -73,3 +73,7 @@ __pycache__/
 tsconfig.tsbuildinfo
 *.ipynb
 .ipynb_checkpoints/
+
+
+**/test-results/
+**/playwright-report/
